@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $envFile = $null
 if (Test-Path ".env") {
     $envFile = ".env"
-} elseif (Test-Path "..\env") {
+} elseif (Test-Path "..\.env") {
     $envFile = "..\.env"
 }
 

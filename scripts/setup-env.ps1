@@ -191,7 +191,7 @@ try {
     Write-Host "1. Your .env file has been created in the current directory" -ForegroundColor White
     Write-Host "2. Run the start script to launch Claude Code:" -ForegroundColor White
     Write-Host ""
-    Write-Host "   PowerShell -ExecutionPolicy Bypass -File .\start.ps1" -ForegroundColor Yellow
+    Write-Host "   PowerShell -ExecutionPolicy Bypass -File .\scripts\start.ps1" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "⚠️  Security Note: Never commit .env to git (it contains secrets)" -ForegroundColor Yellow
     Write-Host ""

@@ -215,7 +215,7 @@ if ($success) {
     Write-Host "⚠️  Proxy configuration completed with warnings" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Some tools may need manual configuration." -ForegroundColor Yellow
-    Write-Host "See SETUP-GUIDE.md for manual proxy setup instructions." -ForegroundColor Yellow
+    Write-Host "See GFE-SETUP-GUIDE.md for manual proxy setup instructions." -ForegroundColor Yellow
 }
 
 Write-Host ""
