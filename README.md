@@ -40,6 +40,18 @@ This guide is designed to work with the official AI Dev Kit. Always use the late
 
 The AI Dev Kit is actively maintained and the source of truth for skills, MCP servers, and capabilities. This repo only covers the GFE installation process.
 
+## Compliance disclaimer
+
+This guide is intended to help users install approved tools within the boundaries of their organization's IT policies. It does **not** attempt to bypass, circumvent, or override any security controls, network restrictions, or access policies.
+
+Before proceeding:
+- Follow your organization's software approval and installation procedures
+- Verify that Node.js, Python, Git, and Claude Code are approved for use on your device
+- Confirm with your IT team that downloading from the external sites referenced in this guide is permitted
+- Use your organization's approved methods for obtaining Personal Access Tokens
+
+If your organization requires tools to be provisioned through an internal process, work with your IT team to make the necessary packages available through approved channels.
+
 ## Contributing
 
 If you find issues with the setup steps or have improvements for GFE-specific configurations, please open an issue or PR.
