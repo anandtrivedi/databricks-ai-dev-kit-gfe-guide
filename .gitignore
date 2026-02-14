@@ -1,0 +1,12 @@
+# Never commit tokens/secrets
+.env
+
+# ai-dev-kit local config
+.ai-dev-kit/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Proxy config marker
+.proxy-configured
