@@ -148,7 +148,7 @@ This path uses direct downloads from official websites instead of package regist
 
 ## Install prerequisites
 
-Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from official sites (nodejs.org, python.org, git-scm.com) and don't require admin privileges.
+Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from official sites (nodejs.org, git-scm.com, github.com) and don't require admin privileges.
 
 > **If even official sites are blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) at the bottom of this guide.
 
@@ -278,14 +278,28 @@ Then continue to [Configure and Launch](#configure-and-launch) below.
 
 **Use if you do NOT have admin privileges. All tools install to your user directory.**
 
-> **Note:** This path downloads portable versions of tools to your user profile. Some organizations restrict downloading or running executables outside of IT-provisioned directories. If you encounter "blocked by Group Policy" errors, work with your IT team to provision these tools through approved channels (see [NIPRNET section](#niprnet--locked-down-citrix-environments)).
+> **Prerequisite:** Python 3.11+ must already be installed. Most GFE machines include Python. Verify with `python --version`. If Python is not available, request it through your IT team or download from https://www.python.org/downloads/.
 
-## Install portable Node.js
+For convenience, this guide installs developer tools alongside your existing Python installation in the **user scripts directory**. This is the standard location where pip installs command-line tools, and is typically already on your system PATH.
+
+> **Note:** If you encounter "blocked by Group Policy" errors when running downloaded executables, work with your IT team to provision these tools through approved channels (see [NIPRNET section](#niprnet--locked-down-citrix-environments)).
+
+## Step 1: Locate your tools directory
 
 ```powershell
-# Create tools directory in your user profile
-$TOOLS_DIR = "$env:USERPROFILE\.databricks-tools"
-New-Item -ItemType Directory -Force -Path $TOOLS_DIR
+# Your Python user scripts directory — where pip installs command-line tools
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+Write-Host "Tools directory: $TOOLS_DIR"
+
+# Ensure it exists
+New-Item -ItemType Directory -Force -Path $TOOLS_DIR | Out-Null
+```
+
+> **Tip:** On most GFE machines this resolves to something like `C:\Users\<YourName>\AppData\Roaming\Python\Python313\Scripts`. This directory is already on your PATH if you've used `pip install --user` before.
+
+## Step 2: Install Node.js
+
+```powershell
 cd $TOOLS_DIR
 
 # Download portable Node.js (check https://nodejs.org for latest LTS version)
@@ -293,13 +307,13 @@ $NODE_VERSION = "20.18.1"
 Invoke-WebRequest -Uri "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip" -OutFile "node.zip"
 Expand-Archive node.zip -DestinationPath . -Force
 
-# Rename extracted folder (remove old one if re-running)
-if (Test-Path "node") { Remove-Item "node" -Recurse -Force }
-Rename-Item "node-v$NODE_VERSION-win-x64" "node"
+# Rename extracted folder
+if (Test-Path "nodejs") { Remove-Item "nodejs" -Recurse -Force }
+Rename-Item "node-v$NODE_VERSION-win-x64" "nodejs"
 Remove-Item node.zip
 
 # Add to user PATH
-$nodePath = "$TOOLS_DIR\node"
+$nodePath = "$TOOLS_DIR\nodejs"
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$nodePath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$nodePath", "User")
@@ -315,60 +329,22 @@ node --version
 npm --version
 ```
 
-## Install portable Python
+## Step 3: Install Git
 
 ```powershell
-cd "$env:USERPROFILE\.databricks-tools"
-
-# Download Python embeddable package (check https://www.python.org for latest 3.11.x)
-$PYTHON_VERSION = "3.11.11"
-Invoke-WebRequest -Uri "https://www.python.org/ftp/python/$PYTHON_VERSION/python-$PYTHON_VERSION-embed-amd64.zip" -OutFile "python.zip"
-Expand-Archive python.zip -DestinationPath "python" -Force
-Remove-Item python.zip
-
-# Enable site-packages (required for pip)
-cd python
-$pthFile = Get-ChildItem "python*._pth" | Select-Object -First 1
-(Get-Content $pthFile.FullName) -replace '#import site', 'import site' | Set-Content $pthFile.FullName
-
-# Install pip
-Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
-.\python.exe get-pip.py
-Remove-Item get-pip.py
-
-# Add to user PATH
-$pythonPath = "$env:USERPROFILE\.databricks-tools\python"
-$scriptsPath = "$pythonPath\Scripts"
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($currentPath -notlike "*$pythonPath*") {
-    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$pythonPath;$scriptsPath", "User")
-}
-
-Write-Host "Python installed to $pythonPath" -ForegroundColor Green
-```
-
-**Close and reopen PowerShell**, then verify:
-
-```powershell
-python --version
-pip --version
-```
-
-## Install portable Git
-
-```powershell
-cd "$env:USERPROFILE\.databricks-tools"
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+cd $TOOLS_DIR
 
 # Download Git archive (check https://github.com/git-for-windows/git/releases for latest)
-# Using .tar.bz2 format because the .7z.exe self-extractor is blocked by Group Policy on many GFE machines
+# Using .tar.bz2 because .7z.exe self-extractors are blocked by Group Policy on many GFE machines
 Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2" -OutFile "git.tar.bz2"
 
-# Extract using Python (tar.bz2 requires Python's tarfile module)
+# Extract using Python's tarfile module
 python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
 Remove-Item git.tar.bz2
 
 # Add to user PATH
-$gitPath = "$env:USERPROFILE\.databricks-tools\git\bin"
+$gitPath = "$TOOLS_DIR\git\bin"
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$gitPath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$gitPath", "User")
@@ -377,18 +353,17 @@ if ($currentPath -notlike "*$gitPath*") {
 Write-Host "Git installed to $gitPath" -ForegroundColor Green
 ```
 
-> **Note:** We use the `.tar.bz2` format instead of the PortableGit `.7z.exe` self-extractor because self-extracting archives are commonly blocked by Group Policy (AppLocker/SRP) on GFE machines. The `.tar.bz2` archive contains the full Git distribution including `bash.exe`, which Claude Code requires.
-
 **Close and reopen PowerShell**, then verify:
 
 ```powershell
 git --version
 ```
 
-## Install Databricks CLI
+## Step 4: Install Databricks CLI
 
 ```powershell
-cd "$env:USERPROFILE\.databricks-tools"
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+cd $TOOLS_DIR
 
 # Download Databricks CLI (check https://github.com/databricks/cli/releases for latest)
 Invoke-WebRequest -Uri "https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip" -OutFile "databricks.zip"
@@ -396,7 +371,7 @@ Expand-Archive databricks.zip -DestinationPath "databricks" -Force
 Remove-Item databricks.zip
 
 # Add to user PATH
-$databricksPath = "$env:USERPROFILE\.databricks-tools\databricks"
+$databricksPath = "$TOOLS_DIR\databricks"
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$databricksPath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$databricksPath", "User")
@@ -411,7 +386,7 @@ Write-Host "Databricks CLI installed" -ForegroundColor Green
 databricks --version
 ```
 
-## Configure Databricks CLI
+## Step 5: Configure Databricks CLI
 
 ```powershell
 @"
@@ -429,7 +404,7 @@ Verify:
 databricks --profile my-workspace current-user me
 ```
 
-## Install Claude Code
+## Step 6: Install Claude Code
 
 ```powershell
 npm install -g @anthropic-ai/claude-code
@@ -443,7 +418,7 @@ Verify:
 claude --version
 ```
 
-## Install AI Dev Kit
+## Next
 
 Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
@@ -635,11 +610,12 @@ Invoke-WebRequest -Uri "https://internal-server.youragency.gov/tools/node-v20.18
 
 ```
 C:\Users\<YourName>\
-  .databricks-tools\          # Portable tools (no-admin installs only)
-    ├── node\
-    ├── python\
-    ├── git\
-    └── databricks\
+  AppData\Roaming\Python\Python3XX\Scripts\   # Python user scripts (tools installed here)
+    ├── nodejs\                # Node.js distribution
+    ├── git\                   # Git distribution (includes bash.exe)
+    ├── databricks\            # Databricks CLI
+    ├── pip.exe                # pip (pre-existing)
+    └── ...                    # Other pip-installed tools
   .databrickscfg               # CLI profile configuration
   .ai-dev-kit\                 # MCP server files
   my-databricks-project\
