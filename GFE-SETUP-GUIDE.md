@@ -36,9 +36,10 @@ This gives you:
 
 | Scenario | Path |
 |----------|------|
-| You have local admin privileges and unrestricted internet | [Standard Installation (Admin)](#standard-installation-admin) |
-| You do NOT have admin privileges but have internet access | [Portable Installation (No Admin)](#portable-installation-no-admin) |
+| NIPRNET Citrix or locked-down environment with Group Policy | [NIPRNET / Locked-down Environments](#niprnet--locked-down-citrix-environments) (start here) |
 | npm registry or GitHub APIs are blocked by your network | [Restricted Network Installation](#restricted-network-installation) |
+| You do NOT have admin privileges but have internet access | [Portable Installation (No Admin)](#portable-installation-no-admin) |
+| You have local admin privileges and unrestricted internet | [Standard Installation (Admin)](#standard-installation-admin) |
 
 **Not sure?** Run this quick test in PowerShell:
 
@@ -52,9 +53,10 @@ Test-NetConnection registry.npmjs.org -Port 443
 Test-NetConnection raw.githubusercontent.com -Port 443
 ```
 
-- **Admin = True, both connections succeed** → Standard Installation (Admin)
-- **Admin = False, both connections succeed** → Portable Installation (No Admin)
+- **Commands above fail or are blocked by Group Policy** → NIPRNET / Locked-down Environments
 - **Either connection fails** → Restricted Network Installation (works with or without admin)
+- **Admin = False, both connections succeed** → Portable Installation (No Admin)
+- **Admin = True, both connections succeed** → Standard Installation (Admin)
 
 ---
 
@@ -96,73 +98,84 @@ Close and reopen PowerShell after configuring proxy settings.
 
 ---
 
-# Standard Installation (Admin)
+# NIPRNET / Locked-down Citrix Environments
 
-**Use if you have local admin privileges and unrestricted internet.**
+If you are on a NIPRNET Citrix virtual desktop or similarly locked-down environment, the self-service installation paths below will likely not work due to:
 
-This is the fastest path. Uses standard installers and package managers.
+- **Group Policy (AppLocker/SRP):** Executables are only allowed to run from IT-approved directories (e.g., `C:\Program Files`). Downloading an `.exe` to your Desktop or user profile and running it will be blocked.
+- **PowerShell download restrictions:** `Invoke-WebRequest` and similar commands are blocked by network policy.
+- **No admin privileges:** You cannot install software to `C:\Program Files` or modify system PATH.
+- **Package registries blocked:** npm (registry.npmjs.org) may be unreachable. (Note: pip/PyPI typically works on NIPRNET.)
+
+## What IT needs to provide
+
+The Databricks AI Dev Kit requires the following software installed to a Group Policy-approved path (e.g., `C:\Program Files`) and added to the system PATH:
+
+| Software | Version | Why it's needed | Official source |
+|----------|---------|-----------------|-----------------|
+| Node.js | 20.x LTS | Required runtime for Claude Code | https://nodejs.org |
+| Git for Windows | 2.40+ | Required by Claude Code (Git Bash) | https://git-scm.com |
+| Python | 3.11+ | Required for AI Dev Kit MCP server | https://python.org |
+| Databricks CLI | Latest | Workspace interaction | https://github.com/databricks/cli |
+
+Submit a request through your organization's approved software provisioning process (Software Center, SCCM, ServiceNow, etc.).
+
+## Network access for AI Dev Kit installation
+
+Even after IT installs the prerequisites, the AI Dev Kit installer itself needs network access. The standard installer downloads from `raw.githubusercontent.com`, which may be blocked. Your IT team should be aware of the following network dependencies:
+
+| Action | URL needed | Alternative if blocked |
+|--------|-----------|----------------------|
+| AI Dev Kit installer | raw.githubusercontent.com | Download zip from github.com (see Restricted Network section) |
+| Claude Code install | registry.npmjs.org | Download `.tgz` manually from npmjs.com |
+| AI Dev Kit Python deps | pypi.org | Typically works on NIPRNET (pip uses allowed network path) |
+| Databricks CLI config | Your workspace URL | Must be reachable from Citrix |
+
+If `github.com` is accessible from the browser, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself. Note: On some environments, Python's built-in `urllib` module may have network access even when other download tools are blocked — IT teams can leverage this when provisioning the required packages.
+
+## After IT installs the tools
+
+Once Node.js, Git, and the Databricks CLI are properly installed by IT, follow the [Standard Installation (Admin)](#standard-installation-admin) path starting from **Install Claude Code**, since the prerequisites will already be in place.
+
+You will also need your Databricks administrator to provide:
+- Your workspace URL
+- A Claude serving endpoint name
+- A Personal Access Token (PAT)
+
+See [Configure and Launch](#configure-and-launch) for the environment setup.
+
+---
+
+# Restricted Network Installation
+
+**Use if npm registry (registry.npmjs.org) or GitHub APIs (raw.githubusercontent.com) are blocked.**
+
+This path uses direct downloads from official websites instead of package registry APIs. If even direct downloads are blocked on your network, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or work with your IT team.
 
 ## Install prerequisites
 
-**Option A - Using winget (Windows 10 1809+):**
+**If you have admin privileges:** Follow the prerequisite steps from [Standard Installation (Admin)](#standard-installation-admin) — winget and standard installers download from official sites (nodejs.org, python.org, git-scm.com).
+
+**If you do NOT have admin privileges:** Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from the same official sites.
+
+> **If even official sites are blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) at the bottom of this guide.
+
+## Install Claude Code (manual download)
+
+Since npm registry is blocked, download the package directly:
 
 ```powershell
-winget install OpenJS.NodeJS.LTS
-winget install Python.Python.3.11
-winget install Git.Git
+$VERSION = "1.0.24"  # Replace with latest from https://www.npmjs.com/package/@anthropic-ai/claude-code
+Invoke-WebRequest -Uri "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz" -OutFile "claude-code.tgz"
 ```
 
-**Option B - Using standard installers:**
+> **If `Invoke-WebRequest` is also blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or ask your IT team to download the file and make it available on an internal share.
 
-Download and run the installers from:
-- **Node.js LTS:** https://nodejs.org/ (use the LTS installer)
-- **Python 3.11+:** https://www.python.org/downloads/ (check "Add to PATH" during install)
-- **Git:** https://git-scm.com/download/win
-
-Close and reopen PowerShell, then verify:
+Then install from the local file:
 
 ```powershell
-node --version
-python --version
-git --version
-```
-
-## Install Databricks CLI
-
-```powershell
-winget install Databricks.DatabricksCLI
-```
-
-Or download from [GitHub releases](https://github.com/databricks/cli/releases) and add to your PATH.
-
-Verify:
-
-```powershell
-databricks --version
-```
-
-## Configure Databricks CLI
-
-```powershell
-@"
-[my-workspace]
-host  = https://your-workspace.cloud.databricks.com
-token = dapi1234567890abcdef...
-"@ | Out-File -FilePath "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
-```
-
-Replace with your actual workspace URL and token from your Databricks administrator.
-
-Verify:
-
-```powershell
-databricks --profile my-workspace current-user me
-```
-
-## Install Claude Code
-
-```powershell
-npm install -g @anthropic-ai/claude-code
+npm install -g claude-code.tgz
+Remove-Item claude-code.tgz
 ```
 
 Verify:
@@ -171,9 +184,101 @@ Verify:
 claude --version
 ```
 
-## Install AI Dev Kit
+## Install AI Dev Kit (manual download)
 
-Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
+Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead:
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
+```
+
+> **If `Invoke-WebRequest` is also blocked**, download the zip through your browser from `https://github.com/databricks-solutions/ai-dev-kit` (Code -> Download ZIP), or ask your IT team to make it available internally.
+
+Then extract and install:
+
+```powershell
+$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
+New-Item -ItemType Directory -Force -Path $PROJECT_DIR
+cd $PROJECT_DIR
+
+# Extract
+Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
+
+# Copy skills to project
+$extracted = Get-ChildItem "$env:TEMP\ai-dev-kit-extract" -Directory | Select-Object -First 1
+$targetSkills = "$PROJECT_DIR\.claude\skills"
+New-Item -ItemType Directory -Force -Path $targetSkills
+Copy-Item "$($extracted.FullName)\skills\*" -Destination $targetSkills -Recurse -Force
+
+# Copy MCP server files
+$aiDevKitDir = "$env:USERPROFILE\.ai-dev-kit"
+New-Item -ItemType Directory -Force -Path $aiDevKitDir
+Copy-Item "$($extracted.FullName)\*" -Destination $aiDevKitDir -Recurse -Force
+
+# Cleanup
+Remove-Item "$env:TEMP\ai-dev-kit-extract" -Recurse -Force
+Remove-Item "ai-dev-kit.zip"
+
+Write-Host "AI Dev Kit installed" -ForegroundColor Green
+```
+
+Install Python dependencies:
+
+```powershell
+pip install databricks-sdk python-dotenv anthropic openai pydantic
+
+# Install the MCP server packages from the extracted AI Dev Kit
+pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
+pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
+```
+
+> **Note:** pip may install scripts to a folder not on your PATH (e.g., `AppData\Roaming\Python\Python313\Scripts`). Add it with:
+> `$env:PATH += ";$env:APPDATA\Python\Python313\Scripts"`
+
+> **If pip is also blocked**, download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
+
+Create MCP config:
+
+**If you have Databricks CLI configured with a profile:**
+
+```powershell
+@"
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "python",
+      "args": ["-m", "databricks_mcp_server"],
+      "env": {
+        "DATABRICKS_CONFIG_PROFILE": "my-workspace"
+      }
+    }
+  }
+}
+"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+```
+
+**If Databricks CLI is not installed (use direct credentials instead):**
+
+```powershell
+@"
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "python",
+      "args": ["-m", "databricks_mcp_server"],
+      "env": {
+        "DATABRICKS_HOST": "https://your-workspace.cloud.databricks.com",
+        "DATABRICKS_TOKEN": "dapi1234567890abcdef..."
+      }
+    }
+  }
+}
+"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+```
+
+> **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
+
+Then continue to [Configure and Launch](#configure-and-launch) below.
 
 ---
 
@@ -349,36 +454,73 @@ Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
 ---
 
-# Restricted Network Installation
+# Standard Installation (Admin)
 
-**Use if npm registry (registry.npmjs.org) or GitHub APIs (raw.githubusercontent.com) are blocked.**
+**Use if you have local admin privileges and unrestricted internet.**
 
-This path uses direct downloads from official websites instead of package registry APIs. If even direct downloads are blocked on your network, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or work with your IT team.
+This is the fastest path. Uses standard installers and package managers.
 
 ## Install prerequisites
 
-**If you have admin privileges:** Follow the prerequisite steps from [Standard Installation (Admin)](#standard-installation-admin) — winget and standard installers download from official sites (nodejs.org, python.org, git-scm.com).
-
-**If you do NOT have admin privileges:** Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from the same official sites.
-
-> **If even official sites are blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) at the bottom of this guide.
-
-## Install Claude Code (manual download)
-
-Since npm registry is blocked, download the package directly:
+**Option A - Using winget (Windows 10 1809+):**
 
 ```powershell
-$VERSION = "1.0.24"  # Replace with latest from https://www.npmjs.com/package/@anthropic-ai/claude-code
-Invoke-WebRequest -Uri "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz" -OutFile "claude-code.tgz"
+winget install OpenJS.NodeJS.LTS
+winget install Python.Python.3.11
+winget install Git.Git
 ```
 
-> **If `Invoke-WebRequest` is also blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or ask your IT team to download the file and make it available on an internal share.
+**Option B - Using standard installers:**
 
-Then install from the local file:
+Download and run the installers from:
+- **Node.js LTS:** https://nodejs.org/ (use the LTS installer)
+- **Python 3.11+:** https://www.python.org/downloads/ (check "Add to PATH" during install)
+- **Git:** https://git-scm.com/download/win
+
+Close and reopen PowerShell, then verify:
 
 ```powershell
-npm install -g claude-code.tgz
-Remove-Item claude-code.tgz
+node --version
+python --version
+git --version
+```
+
+## Install Databricks CLI
+
+```powershell
+winget install Databricks.DatabricksCLI
+```
+
+Or download from [GitHub releases](https://github.com/databricks/cli/releases) and add to your PATH.
+
+Verify:
+
+```powershell
+databricks --version
+```
+
+## Configure Databricks CLI
+
+```powershell
+@"
+[my-workspace]
+host  = https://your-workspace.cloud.databricks.com
+token = dapi1234567890abcdef...
+"@ | Out-File -FilePath "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
+```
+
+Replace with your actual workspace URL and token from your Databricks administrator.
+
+Verify:
+
+```powershell
+databricks --profile my-workspace current-user me
+```
+
+## Install Claude Code
+
+```powershell
+npm install -g @anthropic-ai/claude-code
 ```
 
 Verify:
@@ -387,101 +529,9 @@ Verify:
 claude --version
 ```
 
-## Install AI Dev Kit (manual download)
+## Install AI Dev Kit
 
-Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead:
-
-```powershell
-Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
-```
-
-> **If `Invoke-WebRequest` is also blocked**, download the zip through your browser from `https://github.com/databricks-solutions/ai-dev-kit` (Code -> Download ZIP), or ask your IT team to make it available internally.
-
-Then extract and install:
-
-```powershell
-$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
-New-Item -ItemType Directory -Force -Path $PROJECT_DIR
-cd $PROJECT_DIR
-
-# Extract
-Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
-
-# Copy skills to project
-$extracted = Get-ChildItem "$env:TEMP\ai-dev-kit-extract" -Directory | Select-Object -First 1
-$targetSkills = "$PROJECT_DIR\.claude\skills"
-New-Item -ItemType Directory -Force -Path $targetSkills
-Copy-Item "$($extracted.FullName)\skills\*" -Destination $targetSkills -Recurse -Force
-
-# Copy MCP server files
-$aiDevKitDir = "$env:USERPROFILE\.ai-dev-kit"
-New-Item -ItemType Directory -Force -Path $aiDevKitDir
-Copy-Item "$($extracted.FullName)\*" -Destination $aiDevKitDir -Recurse -Force
-
-# Cleanup
-Remove-Item "$env:TEMP\ai-dev-kit-extract" -Recurse -Force
-Remove-Item "ai-dev-kit.zip"
-
-Write-Host "AI Dev Kit installed" -ForegroundColor Green
-```
-
-Install Python dependencies:
-
-```powershell
-pip install databricks-sdk python-dotenv anthropic openai pydantic
-
-# Install the MCP server packages from the extracted AI Dev Kit
-pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
-pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
-```
-
-> **Note:** pip may install scripts to a folder not on your PATH (e.g., `AppData\Roaming\Python\Python313\Scripts`). Add it with:
-> `$env:PATH += ";$env:APPDATA\Python\Python313\Scripts"`
-
-> **If pip is also blocked**, download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
-
-Create MCP config:
-
-**If you have Databricks CLI configured with a profile:**
-
-```powershell
-@"
-{
-  "mcpServers": {
-    "databricks": {
-      "command": "python",
-      "args": ["-m", "databricks_mcp_server"],
-      "env": {
-        "DATABRICKS_CONFIG_PROFILE": "my-workspace"
-      }
-    }
-  }
-}
-"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
-```
-
-**If Databricks CLI is not installed (use direct credentials instead):**
-
-```powershell
-@"
-{
-  "mcpServers": {
-    "databricks": {
-      "command": "python",
-      "args": ["-m", "databricks_mcp_server"],
-      "env": {
-        "DATABRICKS_HOST": "https://your-workspace.cloud.databricks.com",
-        "DATABRICKS_TOKEN": "dapi1234567890abcdef..."
-      }
-    }
-  }
-}
-"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
-```
-
-> **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
-
-Then continue to [Configure and Launch](#configure-and-launch) below.
+Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
 ---
 
@@ -646,54 +696,6 @@ $env:PATH
 ```
 
 > **Note:** `setx` has a 1024-character limit for the value. If your PATH is already long, use the `$env:PATH` approach for the current session or ask IT to add the path permanently.
-
----
-
-# NIPRNET / Locked-down Citrix Environments
-
-If you are on a NIPRNET Citrix virtual desktop or similarly locked-down environment, the self-service installation paths above will likely not work due to:
-
-- **Group Policy (AppLocker/SRP):** Executables are only allowed to run from IT-approved directories (e.g., `C:\Program Files`). Downloading an `.exe` to your Desktop or user profile and running it will be blocked.
-- **PowerShell download restrictions:** `Invoke-WebRequest` and similar commands are blocked by network policy.
-- **No admin privileges:** You cannot install software to `C:\Program Files` or modify system PATH.
-- **Package registries blocked:** npm (registry.npmjs.org) may be unreachable. (Note: pip/PyPI typically works on NIPRNET.)
-
-## What IT needs to provide
-
-The Databricks AI Dev Kit requires the following software installed to a Group Policy-approved path (e.g., `C:\Program Files`) and added to the system PATH:
-
-| Software | Version | Why it's needed | Official source |
-|----------|---------|-----------------|-----------------|
-| Node.js | 20.x LTS | Required runtime for Claude Code | https://nodejs.org |
-| Git for Windows | 2.40+ | Required by Claude Code (Git Bash) | https://git-scm.com |
-| Python | 3.11+ | Required for AI Dev Kit MCP server | https://python.org |
-| Databricks CLI | Latest | Workspace interaction | https://github.com/databricks/cli |
-
-Submit a request through your organization's approved software provisioning process (Software Center, SCCM, ServiceNow, etc.).
-
-## Network access for AI Dev Kit installation
-
-Even after IT installs the prerequisites, the AI Dev Kit installer itself needs network access. The standard installer downloads from `raw.githubusercontent.com`, which may be blocked. Your IT team should be aware of the following network dependencies:
-
-| Action | URL needed | Alternative if blocked |
-|--------|-----------|----------------------|
-| AI Dev Kit installer | raw.githubusercontent.com | Download zip from github.com (see Restricted Network section) |
-| Claude Code install | registry.npmjs.org | Download `.tgz` manually from npmjs.com |
-| AI Dev Kit Python deps | pypi.org | Typically works on NIPRNET (pip uses allowed network path) |
-| Databricks CLI config | Your workspace URL | Must be reachable from Citrix |
-
-If `github.com` is accessible from the browser, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself. Note: On some environments, Python's built-in `urllib` module may have network access even when other download tools are blocked — IT teams can leverage this when provisioning the required packages.
-
-## After IT installs the tools
-
-Once Node.js, Git, and the Databricks CLI are properly installed by IT, follow the [Standard Installation (Admin)](#standard-installation-admin) path starting from **Install Claude Code**, since the prerequisites will already be in place.
-
-You will also need your Databricks administrator to provide:
-- Your workspace URL
-- A Claude serving endpoint name
-- A Personal Access Token (PAT)
-
-See [Configure and Launch](#configure-and-launch) for the environment setup.
 
 ---
 
