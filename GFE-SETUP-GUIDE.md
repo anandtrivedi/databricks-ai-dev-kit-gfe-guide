@@ -119,13 +119,9 @@ Add all three tools to your user PATH so they are available in new PowerShell se
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
-$userPath = (Get-ItemProperty "HKCU:\Environment").Path
-foreach ($p in $newPaths) {
-    if ($userPath -notlike "*$p*") { $userPath += ";$p" }
-}
+$userPath = (Get-ItemProperty "HKCU:\Environment").Path + ";$TOOLS_DIR\nodejs;$TOOLS_DIR\git\bin;$TOOLS_DIR\databricks"
 setx PATH "$userPath"
-Write-Host "PATH updated — close and reopen PowerShell to use the new paths" -ForegroundColor Green
+Write-Host "PATH updated" -ForegroundColor Green
 
 ```
 
