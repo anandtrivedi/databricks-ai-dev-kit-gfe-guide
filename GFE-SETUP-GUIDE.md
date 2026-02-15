@@ -363,20 +363,29 @@ Most government networks allow downloads from official websites but block packag
 
 ## Install Claude Code (manual download)
 
-Since npm registry is blocked, download the package directly:
+Since npm registry is blocked, download the package directly.
+
+**If `Invoke-WebRequest` works:**
 
 ```powershell
-# Visit https://www.npmjs.com/package/@anthropic-ai/claude-code
-# Find the latest version number, then download:
 $VERSION = "1.0.24"  # Replace with latest from npmjs.com
 Invoke-WebRequest -Uri "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz" -OutFile "claude-code.tgz"
+```
 
-# Install from local file
+**If PowerShell downloads are also blocked (common on NIPRNET), use Python:**
+
+```powershell
+python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-1.0.24.tgz', 'claude-code.tgz'); print('done')"
+```
+
+> **Note:** Replace the version number with the latest from https://www.npmjs.com/package/@anthropic-ai/claude-code
+
+Then install from the local file:
+
+```powershell
 npm install -g claude-code.tgz
 Remove-Item claude-code.tgz
 ```
-
-> **Note:** If `registry.npmjs.org` is also blocked, ask your Databricks admin to download the package and provide it via an internal file share.
 
 Verify:
 
@@ -386,15 +395,26 @@ claude --version
 
 ## Install AI Dev Kit (manual download)
 
-Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead:
+Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead.
+
+**If `Invoke-WebRequest` works:**
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
+```
+
+**If PowerShell downloads are blocked, use Python:**
+
+```powershell
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip'); print('done')"
+```
+
+Then extract and install:
 
 ```powershell
 $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
 New-Item -ItemType Directory -Force -Path $PROJECT_DIR
 cd $PROJECT_DIR
-
-# Download from GitHub (archive download, not raw content)
-Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
 
 # Extract
 Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
@@ -417,11 +437,18 @@ Remove-Item "ai-dev-kit.zip"
 Write-Host "AI Dev Kit installed" -ForegroundColor Green
 ```
 
-Install Python dependencies:
+Install Python dependencies (pip typically works even on restricted networks):
 
 ```powershell
 pip install databricks-sdk python-dotenv anthropic openai pydantic
+
+# Install the MCP server packages from the extracted AI Dev Kit
+pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
+pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
 ```
+
+> **Note:** pip may install scripts to a folder not on your PATH (e.g., `AppData\Roaming\Python\Python313\Scripts`). Add it with:
+> `$env:PATH += ";$env:APPDATA\Python\Python313\Scripts"`
 
 > **If pip is also blocked**, download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
 
@@ -433,7 +460,7 @@ Create MCP config:
   "mcpServers": {
     "databricks": {
       "command": "python",
-      "args": ["-m", "databricks_mcp"],
+      "args": ["-m", "databricks_mcp_server"],
       "env": {
         "DATABRICKS_CONFIG_PROFILE": "my-workspace"
       }
@@ -517,6 +544,14 @@ Required values (get these from your Databricks administrator):
 | `ANTHROPIC_BASE_URL` | Workspace URL + endpoint path | `https://workspace.cloud.databricks.com/serving-endpoints/claude-endpoint` |
 | `ANTHROPIC_AUTH_TOKEN` | Your Databricks PAT | `dapi1234567890abcdef...` |
 
+Optional (only if Git Bash is not on your system PATH):
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `CLAUDE_CODE_GIT_BASH_PATH` | Full path to `bash.exe` from Git | `C:\Program Files\Git\bin\bash.exe` |
+
+> **When do you need this?** Claude Code on Windows requires Git Bash. If `bash` is already on your PATH (typical when Git is installed via winget or standard installer), you can skip this. If Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH", add this variable to your `.env` file pointing to where bash.exe is located.
+
 ## Launch Claude Code
 
 **PowerShell (Windows):**
@@ -582,6 +617,25 @@ List my SQL warehouses
 
 **Fix:** Run scripts with the bypass flag: `PowerShell -ExecutionPolicy Bypass -File .\scripts\start.ps1`. This does not require admin privileges - it only bypasses the policy for that single script invocation.
 
+## "Method invocation is supported only on core types in this language mode"
+
+**Cause:** PowerShell is running in Constrained Language Mode (common on locked-down GFE/NIPRNET machines). This blocks .NET method calls like `[Environment]::SetEnvironmentVariable()` and `[Environment]::GetEnvironmentVariable()` used in the Portable Installation path.
+
+**Fix:** Use these alternatives instead:
+
+```powershell
+# Instead of [Environment]::SetEnvironmentVariable("Path", "...", "User"), use:
+setx PATH "$env:PATH;C:\new\path"
+
+# For the current session only (no restart needed):
+$env:PATH += ";C:\new\path"
+
+# Instead of [Environment]::GetEnvironmentVariable("Path", "User"), use:
+$env:PATH
+```
+
+> **Note:** `setx` has a 1024-character limit for the value. If your PATH is already long, use the `$env:PATH` approach for the current session or ask IT to add the path permanently.
+
 ---
 
 # NIPRNET / Locked-down Citrix Environments
@@ -591,7 +645,7 @@ If you are on a NIPRNET Citrix virtual desktop or similarly locked-down environm
 - **Group Policy (AppLocker/SRP):** Executables are only allowed to run from IT-approved directories (e.g., `C:\Program Files`). Downloading an `.exe` to your Desktop or user profile and running it will be blocked.
 - **PowerShell download restrictions:** `Invoke-WebRequest` and similar commands are blocked by network policy.
 - **No admin privileges:** You cannot install software to `C:\Program Files` or modify system PATH.
-- **Package registries blocked:** npm (registry.npmjs.org) and potentially PyPI (pypi.org) may be unreachable.
+- **Package registries blocked:** npm (registry.npmjs.org) may be unreachable. (Note: pip/PyPI typically works on NIPRNET.)
 
 ## What IT needs to provide
 

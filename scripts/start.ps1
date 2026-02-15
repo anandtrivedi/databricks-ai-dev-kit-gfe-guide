@@ -32,5 +32,8 @@ Get-Content $envFile | ForEach-Object {
 Write-Host "Starting Claude Code with Databricks AI Dev Kit..." -ForegroundColor Green
 Write-Host "  Workspace: $env:ANTHROPIC_BASE_URL" -ForegroundColor Gray
 Write-Host "  Model:     $env:ANTHROPIC_MODEL" -ForegroundColor Gray
+if ($env:CLAUDE_CODE_GIT_BASH_PATH) {
+    Write-Host "  Git Bash:  $env:CLAUDE_CODE_GIT_BASH_PATH" -ForegroundColor Gray
+}
 Write-Host ""
 claude
