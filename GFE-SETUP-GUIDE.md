@@ -462,20 +462,13 @@ This is the fastest path. Uses standard installers and package managers.
 
 ## Install prerequisites
 
-**Option A - Using winget (Windows 10 1809+):**
-
-```powershell
-winget install OpenJS.NodeJS.LTS
-winget install Python.Python.3.11
-winget install Git.Git
-```
-
-**Option B - Using standard installers:**
-
 Download and run the installers from:
 - **Node.js LTS:** https://nodejs.org/ (use the LTS installer)
 - **Python 3.11+:** https://www.python.org/downloads/ (check "Add to PATH" during install)
 - **Git:** https://git-scm.com/download/win
+
+> **If winget is available** on your machine (uncommon on GFE), you can alternatively run:
+> `winget install OpenJS.NodeJS.LTS && winget install Python.Python.3.11 && winget install Git.Git`
 
 Close and reopen PowerShell, then verify:
 
@@ -487,11 +480,7 @@ git --version
 
 ## Install Databricks CLI
 
-```powershell
-winget install Databricks.DatabricksCLI
-```
-
-Or download from [GitHub releases](https://github.com/databricks/cli/releases) and add to your PATH.
+Download from [GitHub releases](https://github.com/databricks/cli/releases) and add to your PATH.
 
 Verify:
 
