@@ -90,10 +90,10 @@ python -c "import urllib.request; print('Downloading Git...'); urllib.request.ur
 
 > **If the download fails** with a connection error, wait a few seconds and re-run the command.
 
-Extract (this takes several minutes — progress will be shown):
+Extract (this takes several minutes — be patient):
 
 ```powershell
-python -c "import tarfile,sys;t=tarfile.open('git.tar.bz2');m=t.getmembers();n=len(m);print(f'Extracting {n} files (this takes a few minutes)...');[((t.extract(x,'git'),print(f'\r  {i+1}/{n} files',end='',flush=True)) if (i+1)%200==0 or i+1==n else t.extract(x,'git')) for i,x in enumerate(m)];print('\nDone.')"
+python -c "import tarfile; print('Extracting Git (this takes a few minutes)...'); tarfile.open('git.tar.bz2').extractall('git'); print('Done.')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
 
