@@ -36,46 +36,6 @@ git clone https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide.git
 
 > **Can't download?** That's fine — this guide works entirely from the browser. All commands can be typed or pasted directly into PowerShell. The helper scripts are optional convenience tools.
 
-## Configure proxy (if applicable)
-
-If your network uses a corporate proxy, configure it **before** installing tools. Skip this if you have direct internet access.
-
-First, detect your proxy. Windows stores this in the registry:
-
-```powershell
-# Detect proxy from Windows Internet Settings (same proxy your browser uses)
-$proxyServer = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings").ProxyServer
-if ($proxyServer) {
-    Write-Host "Detected proxy: $proxyServer"
-} else {
-    # Fallback: check WinHTTP proxy
-    netsh winhttp show proxy
-}
-```
-
-If a proxy is detected, configure it for your tools:
-
-```powershell
-$PROXY = "http://$proxyServer"  # Use the value detected above
-
-# Set for all tools (persists across sessions)
-setx HTTP_PROXY $PROXY
-setx HTTPS_PROXY $PROXY
-
-# Set for current session
-$env:HTTP_PROXY = $PROXY
-$env:HTTPS_PROXY = $PROXY
-```
-
-After installing npm and git later in this guide, also run:
-
-```powershell
-npm config set proxy $PROXY
-npm config set https-proxy $PROXY
-git config --global http.proxy $PROXY
-git config --global https.proxy $PROXY
-```
-
 ## Install prerequisites
 
 ### Verify Python
@@ -467,9 +427,25 @@ List my SQL warehouses
 
 **Fix:** Close and reopen PowerShell. User PATH changes require a new session.
 
-## Proxy-related errors
+## Proxy-related errors (timeouts, connection refused on downloads)
 
-**Fix:** See [Configure proxy](#configure-proxy-if-applicable) to detect and set your proxy.
+**Cause:** Your network uses a corporate proxy that isn't being picked up automatically.
+
+**Fix:** Detect your proxy from Windows settings and set it:
+
+```powershell
+# Detect proxy from Windows Internet Settings
+$proxyServer = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings").ProxyServer
+Write-Host "Proxy: $proxyServer"
+
+# If a proxy was found, set it for the current session
+if ($proxyServer) {
+    $env:HTTP_PROXY = "http://$proxyServer"
+    $env:HTTPS_PROXY = "http://$proxyServer"
+}
+```
+
+> **Note:** Most GFE environments do not require manual proxy configuration — tools like `Invoke-WebRequest` and `pip` typically inherit the system proxy automatically.
 
 ## PowerShell script execution is disabled
 
@@ -573,9 +549,7 @@ C:\Users\<YourName>\
     ├── .env                   # Your endpoint config (DO NOT commit)
     ├── .env.example           # Config template
     ├── scripts\
-    │   ├── start.ps1          # Launch script
-    │   ├── setup-env.ps1      # Environment configurator
-    │   └── setup-proxy.ps1    # Proxy configurator
+    │   └── start.ps1          # Launch script
     ├── .claude\skills\        # 26+ Databricks skills
     └── .mcp.json              # MCP server config
 ```
