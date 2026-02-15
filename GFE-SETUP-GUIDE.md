@@ -40,22 +40,34 @@ git clone https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide.git
 
 If your network uses a corporate proxy, configure it **before** installing tools. Skip this if you have direct internet access.
 
-**If you downloaded the helper scripts**, run the automated proxy setup:
+First, detect your proxy. Windows stores this in the registry:
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\scripts\setup-proxy.ps1
+# Detect proxy from Windows Internet Settings (same proxy your browser uses)
+$proxyServer = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings").ProxyServer
+if ($proxyServer) {
+    Write-Host "Detected proxy: $proxyServer"
+} else {
+    # Fallback: check WinHTTP proxy
+    netsh winhttp show proxy
+}
 ```
 
-**Otherwise, configure manually:**
+If a proxy is detected, configure it for your tools:
 
 ```powershell
-$PROXY = "http://proxy.youragency.gov:8080"
+$PROXY = "http://$proxyServer"  # Use the value detected above
 
-[Environment]::SetEnvironmentVariable("HTTP_PROXY", $PROXY, "User")
-[Environment]::SetEnvironmentVariable("HTTPS_PROXY", $PROXY, "User")
+# Set for all tools (persists across sessions)
+setx HTTP_PROXY $PROXY
+setx HTTPS_PROXY $PROXY
+
+# Set for current session
+$env:HTTP_PROXY = $PROXY
+$env:HTTPS_PROXY = $PROXY
 ```
 
-After installing npm and git, also run:
+After installing npm and git later in this guide, also run:
 
 ```powershell
 npm config set proxy $PROXY
@@ -63,8 +75,6 @@ npm config set https-proxy $PROXY
 git config --global http.proxy $PROXY
 git config --global https.proxy $PROXY
 ```
-
-Close and reopen PowerShell after configuring proxy settings.
 
 ## Install prerequisites
 
@@ -459,7 +469,7 @@ List my SQL warehouses
 
 ## Proxy-related errors
 
-**Fix:** Run `scripts\setup-proxy.ps1` or configure proxy manually. See [Configure proxy](#configure-proxy-if-applicable).
+**Fix:** See [Configure proxy](#configure-proxy-if-applicable) to detect and set your proxy.
 
 ## PowerShell script execution is disabled
 
