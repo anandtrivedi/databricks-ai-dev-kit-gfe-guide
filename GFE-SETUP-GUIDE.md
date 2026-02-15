@@ -145,18 +145,29 @@ All four should print version numbers. If any fail, see [Troubleshooting](#troub
 
 ## Configure Databricks CLI
 
+Your Databricks administrator will provide two things:
+- **Workspace URL** — looks like `https://adb-1234567890.12.azuredatabricks.net` or `https://my-company.cloud.databricks.com`
+- **Personal Access Token (PAT)** — starts with `dapi`
+
+Replace the placeholders below with your actual values:
+
 ```powershell
-"[my-workspace]", "host  = https://your-workspace.cloud.databricks.com", "token = dapi1234567890abcdef..." | Out-File "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
+"[my-workspace]", "host  = https://REPLACE-WITH-YOUR-WORKSPACE-URL", "token = REPLACE-WITH-YOUR-PAT" | Out-File "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
 
 ```
 
-Replace with your actual workspace URL and token from your Databricks administrator.
+> **Example:** If your workspace is `https://adb-1234567890.12.azuredatabricks.net` and your token is `dapi0123456789abcdef`, the command would be:
+> ```powershell
+> "[my-workspace]", "host  = https://adb-1234567890.12.azuredatabricks.net", "token = dapi0123456789abcdef" | Out-File "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
+> ```
 
 Verify:
 
 ```powershell
 databricks --profile my-workspace current-user me
 ```
+
+This should print your Databricks username. If it fails, double-check your workspace URL and token.
 
 ---
 
