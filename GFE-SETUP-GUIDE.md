@@ -1,5 +1,7 @@
 # Databricks AI Dev Kit - GFE Setup Guide
 
+*Last updated: February 15, 2026*
+
 **Complete installation guide for Government Field Engineering machines.**
 
 This guide walks you through installing the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) on Windows GFE machines. One linear path — if a step is blocked on your machine, inline fallbacks show you the alternative.
