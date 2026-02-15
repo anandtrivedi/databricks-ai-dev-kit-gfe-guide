@@ -81,10 +81,10 @@ Write-Host "Node.js installed" -ForegroundColor Green
 
 Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` archive because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines. The download uses chunked transfer with retries because large files can be interrupted by network timeouts.
 
-Download Git (retries up to 3 times if the connection drops):
+Download Git (retries up to 3 times if the connection drops). First, save the download script:
 
 ```powershell
-@'
+Set-Content "$env:TEMP\dl_git.py" @'
 import urllib.request, sys, time
 url = 'https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2'
 out = 'git.tar.bz2'
@@ -92,7 +92,7 @@ def progress(block, size, total):
     mb = block * size / 1048576
     if total > 0:
         pct = min(100, block * size * 100 // total)
-        print(f'\r  {mb:.1f} MB / {total/1048576:.1f} MB ({pct}%)', end='', flush=True)
+        print(f'\r  {mb:.1f} / {total/1048576:.1f} MB ({pct}%)', end='', flush=True)
     else:
         print(f'\r  {mb:.1f} MB downloaded', end='', flush=True)
 for attempt in range(3):
@@ -107,14 +107,15 @@ for attempt in range(3):
             time.sleep(5)
         else:
             raise
-'@ | python
+'@
 
 ```
 
-Extract and clean up:
+Then run the download and extract:
 
 ```powershell
-python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
+python "$env:TEMP\dl_git.py"
+python -c "import tarfile; print('Extracting Git (this may take a minute)...'); tarfile.open('git.tar.bz2').extractall('git'); print('Done.')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
 
