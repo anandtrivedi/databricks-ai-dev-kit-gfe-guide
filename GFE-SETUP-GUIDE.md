@@ -442,6 +442,8 @@ pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
 
 Create MCP config:
 
+**If you have Databricks CLI configured with a profile:**
+
 ```powershell
 @"
 {
@@ -457,6 +459,27 @@ Create MCP config:
 }
 "@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
 ```
+
+**If Databricks CLI is not installed (use direct credentials instead):**
+
+```powershell
+@"
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "python",
+      "args": ["-m", "databricks_mcp_server"],
+      "env": {
+        "DATABRICKS_HOST": "https://your-workspace.cloud.databricks.com",
+        "DATABRICKS_TOKEN": "dapi1234567890abcdef..."
+      }
+    }
+  }
+}
+"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+```
+
+> **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
 
 Then continue to [Configure and Launch](#configure-and-launch) below.
 
