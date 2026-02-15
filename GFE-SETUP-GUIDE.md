@@ -79,12 +79,12 @@ Write-Host "Node.js installed" -ForegroundColor Green
 
 ### Install Git
 
-Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` format because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines.
+Check https://github.com/git-for-windows/git/releases for the latest version. We use **MinGit** — a smaller download that includes `git.exe` and `bash.exe` (required by Claude Code).
 
 ```powershell
-python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2', 'git.tar.bz2')"
-python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
-Remove-Item git.tar.bz2
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip', 'mingit.zip')"
+Expand-Archive mingit.zip -DestinationPath "git" -Force
+Remove-Item mingit.zip
 Write-Host "Git installed" -ForegroundColor Green
 
 ```
@@ -109,7 +109,7 @@ Add all three tools to your user PATH so they are available in new PowerShell se
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
+$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\cmd", "$TOOLS_DIR\databricks")
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 foreach ($p in $newPaths) {
     if ($currentPath -notlike "*$p*") { $currentPath += ";$p" }
@@ -302,7 +302,7 @@ Create a `.env` file with your Databricks endpoint configuration. Replace the wo
 ```powershell
 # Auto-detect Git Bash path from the install above
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-$GIT_BASH = "$TOOLS_DIR\git\bin\bash.exe"
+$GIT_BASH = "$TOOLS_DIR\git\usr\bin\bash.exe"
 
 @"
 # Databricks-managed Claude endpoint configuration
@@ -529,7 +529,7 @@ python -c "import urllib.request; urllib.request.urlretrieve('https://internal-s
 C:\Users\<YourName>\
   AppData\Roaming\Python\Python3XX\Scripts\   # Python user scripts (tools installed here)
     ├── nodejs\                # Node.js distribution
-    ├── git\                   # Git distribution (includes bash.exe)
+    ├── git\                   # MinGit (cmd\git.exe, usr\bin\bash.exe)
     ├── databricks\            # Databricks CLI
     ├── pip.exe                # pip (pre-existing)
     └── ...                    # Other pip-installed tools
