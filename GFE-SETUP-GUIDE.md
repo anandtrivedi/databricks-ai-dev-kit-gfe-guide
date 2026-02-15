@@ -2,7 +2,7 @@
 
 **Complete installation guide for Government Field Engineering machines.**
 
-This guide walks you through installing the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) on Windows GFE machines. One linear path — if a step is blocked on your machine, inline fallbacks show you the alternative.
+This guide walks you through installing the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) on Windows GFE machines. One linear path with alternative methods included where needed.
 
 > **Upstream project:** All skills and MCP servers come from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit). This guide only covers GFE-specific installation steps.
 
@@ -90,7 +90,7 @@ python -c "import urllib.request; print('Downloading Git...'); urllib.request.ur
 
 ```
 
-> **If the download fails** with a connection error, wait a few seconds and re-run the command.
+> **Not working?** Wait a few seconds and re-run the command — large downloads can be interrupted by network timeouts.
 
 Extract (this takes several minutes — be patient):
 
@@ -113,7 +113,7 @@ Write-Host "Databricks CLI installed" -ForegroundColor Green
 
 ```
 
-> **If any download or execution is blocked by Group Policy**, request the tools from your IT team. See [For IT Teams](#for-it-teams).
+> **Not working?** Your IT team may need to provision these tools. See [For IT Teams](#for-it-teams).
 
 ### Update PATH
 
@@ -167,7 +167,7 @@ Verify:
 databricks --profile my-workspace current-user me
 ```
 
-This should print your Databricks username. If it fails, double-check your workspace URL and token.
+This should print your Databricks username. Not working? Double-check your workspace URL and token.
 
 ---
 
@@ -183,16 +183,18 @@ Verify:
 claude --version
 ```
 
-> **If npm is blocked:** Download the package directly and install from the local file:
->
-> ```powershell
-> # Check https://www.npmjs.com/package/@anthropic-ai/claude-code for latest version
-> $VERSION = "1.0.24"
-> python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz', 'claude-code.tgz')"
-> npm install -g claude-code.tgz
-> Remove-Item claude-code.tgz
-> claude --version
-> ```
+<details><summary>Not working? Alternative: install from local file</summary>
+
+```powershell
+# Check https://www.npmjs.com/package/@anthropic-ai/claude-code for latest version
+$VERSION = "1.0.24"
+python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz', 'claude-code.tgz')"
+npm install -g claude-code.tgz
+Remove-Item claude-code.tgz
+claude --version
+```
+
+</details>
 
 ---
 
@@ -214,9 +216,9 @@ When prompted:
 2. **Select profile** → `my-workspace`
 3. **Select scope** → `Project`
 
-### If the installer fails
+<details><summary>Not working? Alternative: manual installation</summary>
 
-If `raw.githubusercontent.com` is blocked or `bash` is not available, install manually:
+You can install manually instead:
 
 ```powershell
 $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
@@ -259,7 +261,7 @@ pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
 
 ```
 
-> **If pip is also blocked**, download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
+> **Not working?** Download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
 
 Create MCP config:
 
@@ -270,7 +272,7 @@ python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'pyt
 
 ```
 
-**If Databricks CLI is not installed (use direct credentials instead):**
+**Alternative: use direct credentials (no Databricks CLI needed):**
 
 ```powershell
 python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_HOST': 'https://your-workspace.cloud.databricks.com', 'DATABRICKS_TOKEN': 'dapi1234567890abcdef...'}}}}, open('.mcp.json', 'w'), indent=2)"
@@ -278,6 +280,8 @@ python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'pyt
 ```
 
 > **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
+
+</details>
 
 ---
 
@@ -398,7 +402,7 @@ List my SQL warehouses
 
 **Cause:** GitHub raw content (raw.githubusercontent.com) is blocked, or `bash` is not available.
 
-**Fix:** Use the manual method in [If the installer fails](#if-the-installer-fails). If `bash` isn't found, make sure Git is installed and your PATH includes the Git `bin` directory.
+**Fix:** Use the manual installation method in [Install AI Dev Kit](#install-ai-dev-kit). If `bash` isn't found, make sure Git is installed and your PATH includes the Git `bin` directory.
 
 ## pip install fails
 
