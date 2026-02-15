@@ -79,42 +79,20 @@ Write-Host "Node.js installed" -ForegroundColor Green
 
 ### Install Git
 
-Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` archive because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines. The download uses chunked transfer with retries because large files can be interrupted by network timeouts.
+Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` archive because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines.
 
-Download Git (retries up to 3 times if the connection drops). First, save the download script:
+Download Git:
 
 ```powershell
-Set-Content "$env:TEMP\dl_git.py" @'
-import urllib.request, sys, time
-url = 'https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2'
-out = 'git.tar.bz2'
-def progress(block, size, total):
-    mb = block * size / 1048576
-    if total > 0:
-        pct = min(100, block * size * 100 // total)
-        print(f'\r  {mb:.1f} / {total/1048576:.1f} MB ({pct}%)', end='', flush=True)
-    else:
-        print(f'\r  {mb:.1f} MB downloaded', end='', flush=True)
-for attempt in range(3):
-    try:
-        print(f'Downloading Git (attempt {attempt+1}/3)...')
-        urllib.request.urlretrieve(url, out, progress)
-        print('\nDone.')
-        break
-    except Exception as e:
-        print(f'\nFailed: {e}')
-        if attempt < 2:
-            time.sleep(5)
-        else:
-            raise
-'@
+python -c "import urllib.request; print('Downloading Git...'); urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2', 'git.tar.bz2'); print('Done.')"
 
 ```
 
-Then run the download and extract (extraction takes several minutes — progress will be shown):
+> **If the download fails** with a connection error, wait a few seconds and re-run the command.
+
+Extract (this takes several minutes — progress will be shown):
 
 ```powershell
-python "$env:TEMP\dl_git.py"
 python -c "import tarfile,sys;t=tarfile.open('git.tar.bz2');m=t.getmembers();n=len(m);print(f'Extracting {n} files (this takes a few minutes)...');[((t.extract(x,'git'),print(f'\r  {i+1}/{n} files',end='',flush=True)) if (i+1)%200==0 or i+1==n else t.extract(x,'git')) for i,x in enumerate(m)];print('\nDone.')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
