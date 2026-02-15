@@ -24,7 +24,7 @@ Get-Content $envFile | ForEach-Object {
         if ($line -match '^([^=]+)=(.*)$') {
             $name = $matches[1].Trim()
             $value = $matches[2].Trim() -replace '^["'']|["'']$', ''
-            [Environment]::SetEnvironmentVariable($name, $value, "Process")
+            Set-Item -Path "env:\$name" -Value $value
         }
     }
 }

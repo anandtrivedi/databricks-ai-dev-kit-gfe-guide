@@ -181,6 +181,8 @@ Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
 **Use if you do NOT have admin privileges. All tools install to your user directory.**
 
+> **Note:** This path downloads portable versions of tools to your user profile. Some organizations restrict downloading or running executables outside of IT-provisioned directories. If you encounter "blocked by Group Policy" errors, work with your IT team to provision these tools through approved channels (see [NIPRNET section](#niprnet--locked-down-citrix-environments)).
+
 ## Install portable Node.js
 
 ```powershell
@@ -351,34 +353,26 @@ Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
 **Use if npm registry (registry.npmjs.org) or GitHub APIs (raw.githubusercontent.com) are blocked.**
 
-Most government networks allow downloads from official websites but block package registry APIs. This path uses direct downloads instead.
+This path uses direct downloads from official websites instead of package registry APIs. If even direct downloads are blocked on your network, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or work with your IT team.
 
 ## Install prerequisites
 
-**If you have admin privileges:** Follow the prerequisite steps from [Standard Installation (Admin)](#standard-installation-admin) — winget and standard installers download from official sites that are typically allowed.
+**If you have admin privileges:** Follow the prerequisite steps from [Standard Installation (Admin)](#standard-installation-admin) — winget and standard installers download from official sites (nodejs.org, python.org, git-scm.com).
 
-**If you do NOT have admin privileges:** Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download from official sites (nodejs.org, python.org, github.com/releases) which are typically allowed.
+**If you do NOT have admin privileges:** Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from the same official sites.
 
 > **If even official sites are blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) at the bottom of this guide.
 
 ## Install Claude Code (manual download)
 
-Since npm registry is blocked, download the package directly.
-
-**If `Invoke-WebRequest` works:**
+Since npm registry is blocked, download the package directly:
 
 ```powershell
-$VERSION = "1.0.24"  # Replace with latest from npmjs.com
+$VERSION = "1.0.24"  # Replace with latest from https://www.npmjs.com/package/@anthropic-ai/claude-code
 Invoke-WebRequest -Uri "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz" -OutFile "claude-code.tgz"
 ```
 
-**If PowerShell downloads are also blocked (common on NIPRNET), use Python:**
-
-```powershell
-python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-1.0.24.tgz', 'claude-code.tgz'); print('done')"
-```
-
-> **Note:** Replace the version number with the latest from https://www.npmjs.com/package/@anthropic-ai/claude-code
+> **If `Invoke-WebRequest` is also blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) or ask your IT team to download the file and make it available on an internal share.
 
 Then install from the local file:
 
@@ -395,19 +389,13 @@ claude --version
 
 ## Install AI Dev Kit (manual download)
 
-Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead.
-
-**If `Invoke-WebRequest` works:**
+Since the standard installer uses `raw.githubusercontent.com` which may be blocked, download the zip instead:
 
 ```powershell
 Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
 ```
 
-**If PowerShell downloads are blocked, use Python:**
-
-```powershell
-python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip'); print('done')"
-```
+> **If `Invoke-WebRequest` is also blocked**, download the zip through your browser from `https://github.com/databricks-solutions/ai-dev-kit` (Code -> Download ZIP), or ask your IT team to make it available internally.
 
 Then extract and install:
 
@@ -437,7 +425,7 @@ Remove-Item "ai-dev-kit.zip"
 Write-Host "AI Dev Kit installed" -ForegroundColor Green
 ```
 
-Install Python dependencies (pip typically works even on restricted networks):
+Install Python dependencies:
 
 ```powershell
 pip install databricks-sdk python-dotenv anthropic openai pydantic
@@ -671,7 +659,7 @@ Even after IT installs the prerequisites, the AI Dev Kit installer itself needs 
 | AI Dev Kit Python deps | pypi.org | Typically works on NIPRNET (pip uses allowed network path) |
 | Databricks CLI config | Your workspace URL | Must be reachable from Citrix |
 
-If `github.com` is accessible from the browser or via Python, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself.
+If `github.com` is accessible from the browser, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself. Note: On some environments, Python's built-in `urllib` module may have network access even when other download tools are blocked — IT teams can leverage this when provisioning the required packages.
 
 ## After IT installs the tools
 
