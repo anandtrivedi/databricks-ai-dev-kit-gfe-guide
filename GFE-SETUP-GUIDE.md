@@ -71,7 +71,7 @@ cd $TOOLS_DIR
 
 # Download portable Node.js (check https://nodejs.org for latest LTS version)
 $NODE_VERSION = "20.18.1"
-Invoke-WebRequest -Uri "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip" -OutFile "node.zip"
+python -c "import urllib.request; urllib.request.urlretrieve('https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip', 'node.zip')"
 Expand-Archive node.zip -DestinationPath . -Force
 
 # Rename extracted folder
@@ -99,7 +99,7 @@ cd $TOOLS_DIR
 
 # Download Git archive (check https://github.com/git-for-windows/git/releases for latest)
 # Using .tar.bz2 because .7z.exe self-extractors are blocked by Group Policy on many GFE machines
-Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2" -OutFile "git.tar.bz2"
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2', 'git.tar.bz2')"
 
 # Extract using Python's tarfile module
 python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
@@ -124,7 +124,7 @@ $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('s
 cd $TOOLS_DIR
 
 # Download Databricks CLI (check https://github.com/databricks/cli/releases for latest)
-Invoke-WebRequest -Uri "https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip" -OutFile "databricks.zip"
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip', 'databricks.zip')"
 Expand-Archive databricks.zip -DestinationPath "databricks" -Force
 Remove-Item databricks.zip
 
@@ -191,13 +191,11 @@ claude --version
 >
 > ```powershell
 > $VERSION = "1.0.24"  # Check https://www.npmjs.com/package/@anthropic-ai/claude-code for latest
-> Invoke-WebRequest -Uri "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz" -OutFile "claude-code.tgz"
+> python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz', 'claude-code.tgz')"
 > npm install -g claude-code.tgz
 > Remove-Item claude-code.tgz
 > claude --version
 > ```
->
-> If `Invoke-WebRequest` is also blocked, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally).
 
 ---
 
@@ -223,8 +221,8 @@ When prompted:
 If `raw.githubusercontent.com` is blocked or `bash` is not available, install manually:
 
 ```powershell
-# Download AI Dev Kit zip (or download via browser from github.com/databricks-solutions/ai-dev-kit)
-Invoke-WebRequest -Uri "https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip" -OutFile "ai-dev-kit.zip"
+# Download AI Dev Kit zip
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip')"
 
 $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
 New-Item -ItemType Directory -Force -Path $PROJECT_DIR
@@ -445,7 +443,7 @@ if ($proxyServer) {
 }
 ```
 
-> **Note:** Most GFE environments do not require manual proxy configuration — tools like `Invoke-WebRequest` and `pip` typically inherit the system proxy automatically.
+> **Note:** Most GFE environments do not require manual proxy configuration — Python's `urllib` and `pip` typically inherit the system proxy automatically.
 
 ## PowerShell script execution is disabled
 
@@ -525,10 +523,10 @@ If your network is very restrictive (all external sites blocked), ask your Datab
 
 ```powershell
 # Instead of:
-Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.18.1/node-v20.18.1-win-x64.zip"
+python -c "import urllib.request; urllib.request.urlretrieve('https://nodejs.org/dist/v20.18.1/node-v20.18.1-win-x64.zip', 'node.zip')"
 
 # Use:
-Invoke-WebRequest -Uri "https://internal-server.youragency.gov/tools/node-v20.18.1-win-x64.zip"
+python -c "import urllib.request; urllib.request.urlretrieve('https://internal-server.youragency.gov/tools/node-v20.18.1-win-x64.zip', 'node.zip')"
 ```
 
 ---
