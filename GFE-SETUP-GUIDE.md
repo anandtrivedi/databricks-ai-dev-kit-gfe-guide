@@ -26,6 +26,8 @@ Any missing? Continue with [Full Setup](#full-setup) below.
 
 # Full Setup
 
+> **Tip:** After pasting a multi-line code block into PowerShell, press **Enter** to execute the last line.
+
 ## (Optional) Download helper scripts
 
 This repo includes helper scripts for proxy detection, environment setup, and launching Claude Code. If you can clone or download from GitHub:
