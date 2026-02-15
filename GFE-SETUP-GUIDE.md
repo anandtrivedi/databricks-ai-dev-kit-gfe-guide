@@ -26,41 +26,27 @@ Any missing? Continue with [Full Setup](#full-setup) below.
 
 # Full Setup
 
-## Download this guide and helper scripts
+## (Optional) Download helper scripts
 
-Download or clone this repo to get the helper scripts used throughout this guide:
+This repo includes helper scripts for proxy detection, environment setup, and launching Claude Code. If you can clone or download from GitHub:
 
 ```powershell
-# Option A: Clone (if git is available)
 git clone https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide.git
-cd databricks-ai-dev-kit-gfe-guide
-
-# Option B: Download ZIP (if git is not installed yet)
-# Go to https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide
-# Click "Code" → "Download ZIP", extract it, and open PowerShell in that folder
 ```
 
-This gives you:
-- `scripts/setup-proxy.ps1` - Auto-detect and configure corporate proxy
-- `scripts/setup-env.ps1` - Interactive wizard to create your `.env` file
-- `scripts/start.ps1` - Launch script for Claude Code
-- `.env.example` - Template for environment configuration
+> **Can't download?** That's fine — this guide works entirely from the browser. All commands can be typed or pasted directly into PowerShell. The helper scripts are optional convenience tools.
 
 ## Configure proxy (if applicable)
 
 If your network uses a corporate proxy, configure it **before** installing tools. Skip this if you have direct internet access.
 
-**Option A - Automated (recommended):**
+**If you downloaded the helper scripts**, run the automated proxy setup:
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\scripts\setup-proxy.ps1
 ```
 
-The script auto-detects your Windows proxy settings and configures npm, git, and pip. Re-run it after installing each tool if needed.
-
-> **Note:** If npm/git/pip aren't installed yet, the script will skip those and show a warning. That's fine — re-run after you install them.
-
-**Option B - Manual:**
+**Otherwise, configure manually:**
 
 ```powershell
 $PROXY = "http://proxy.youragency.gov:8080"
@@ -352,72 +338,85 @@ Create MCP config:
 
 # Configure and Launch
 
-## Copy helper scripts to your project
-
-Copy the helper scripts from this repo into your project directory:
-
-```powershell
-$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
-
-# Copy scripts and config template
-Copy-Item ".\scripts" -Destination "$PROJECT_DIR\scripts" -Recurse -Force
-Copy-Item ".\.env.example" -Destination "$PROJECT_DIR\.env.example" -Force
-```
-
-## Configure your environment
+## Create your `.env` file
 
 ```powershell
 cd "$env:USERPROFILE\my-databricks-project"
 ```
 
-**Option A - Interactive setup (recommended):**
+Create a `.env` file with your Databricks endpoint configuration. Get these values from your Databricks administrator:
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\scripts\setup-env.ps1
+@"
+# Databricks-managed Claude endpoint configuration
+ANTHROPIC_MODEL=databricks-claude-sonnet-4-5
+ANTHROPIC_BASE_URL=https://your-workspace.cloud.databricks.com/serving-endpoints/your-endpoint
+ANTHROPIC_AUTH_TOKEN=dapi1234567890abcdef
+ANTHROPIC_CUSTOM_HEADERS=x-databricks-use-coding-agent-mode: true
+CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
+"@ | Out-File -FilePath ".env" -Encoding UTF8
 ```
 
-This walks you through entering your workspace URL, endpoint name, model, and token.
+Replace the values above with your actual workspace URL, endpoint name, and PAT.
 
-**Option B - Manual `.env` file:**
+Optional — add this line if Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH":
 
-Copy `.env.example` to `.env` and fill in your values:
+```
+CLAUDE_CODE_GIT_BASH_PATH=C:\Users\YourName\AppData\Roaming\Python\Python313\Scripts\git\bin\bash.exe
+```
+
+## Create the launch script
+
+Create `scripts\start.ps1` in your project directory. This script loads your `.env` file and starts Claude Code:
 
 ```powershell
-Copy-Item .env.example .env
-notepad .env
+$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
+New-Item -ItemType Directory -Force -Path "$PROJECT_DIR\scripts" | Out-Null
+
+@'
+# start.ps1 - Launch Claude Code with Databricks-managed Claude endpoint
+$ErrorActionPreference = "Stop"
+
+# Find .env file (check current dir, then parent dir)
+$envFile = $null
+if (Test-Path ".env") { $envFile = ".env" }
+elseif (Test-Path "..\.env") { $envFile = "..\.env" }
+
+if (-not $envFile) {
+    Write-Host "Error: .env file not found." -ForegroundColor Red
+    exit 1
+}
+
+# Load environment variables from .env
+Get-Content $envFile | ForEach-Object {
+    $line = $_.Trim()
+    if ($line -and -not $line.StartsWith("#")) {
+        if ($line -match '^([^=]+)=(.*)$') {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim() -replace '^["'']|["'']$', ''
+            Set-Item -Path "env:\$name" -Value $value
+        }
+    }
+}
+
+Write-Host "Starting Claude Code with Databricks AI Dev Kit..." -ForegroundColor Green
+Write-Host "  Workspace: $env:ANTHROPIC_BASE_URL" -ForegroundColor Gray
+Write-Host "  Model:     $env:ANTHROPIC_MODEL" -ForegroundColor Gray
+if ($env:CLAUDE_CODE_GIT_BASH_PATH) {
+    Write-Host "  Git Bash:  $env:CLAUDE_CODE_GIT_BASH_PATH" -ForegroundColor Gray
+}
+Write-Host ""
+claude
+'@ | Out-File -FilePath "$PROJECT_DIR\scripts\start.ps1" -Encoding UTF8
 ```
 
-Required values (get these from your Databricks administrator):
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ANTHROPIC_MODEL` | Model name on your serving endpoint | `databricks-claude-sonnet-4-5` |
-| `ANTHROPIC_BASE_URL` | Workspace URL + endpoint path | `https://workspace.cloud.databricks.com/serving-endpoints/claude-endpoint` |
-| `ANTHROPIC_AUTH_TOKEN` | Your Databricks PAT | `dapi1234567890abcdef...` |
-
-Optional (only if Git Bash is not on your system PATH):
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `CLAUDE_CODE_GIT_BASH_PATH` | Full path to `bash.exe` from Git | `C:\Program Files\Git\bin\bash.exe` |
-
-> **When do you need this?** Claude Code on Windows requires Git Bash. If `bash` is already on your PATH (typical when Git is installed to `C:\Program Files\Git`), you can skip this. If Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH", add this variable to your `.env` file pointing to where bash.exe is located.
+> **If you downloaded the helper scripts** from GitHub earlier, you can skip this step — just copy them into your project: `Copy-Item ".\scripts" -Destination "$PROJECT_DIR\scripts" -Recurse -Force`
 
 ## Launch Claude Code
-
-**PowerShell (Windows):**
 
 ```powershell
 cd "$env:USERPROFILE\my-databricks-project"
 PowerShell -ExecutionPolicy Bypass -File .\scripts\start.ps1
-```
-
-**Bash (macOS/Linux):**
-
-```bash
-cd ~/my-databricks-project
-chmod +x ./scripts/start-demo.sh
-./scripts/start-demo.sh
 ```
 
 Test it by asking:
