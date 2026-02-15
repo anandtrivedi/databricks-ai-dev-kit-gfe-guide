@@ -48,97 +48,52 @@ python --version
 
 If Python is not available, request it through your IT team or download from https://www.python.org/downloads/.
 
-### Locate your tools directory
+### Install Node.js, Git, and Databricks CLI
 
-For convenience, this guide installs developer tools alongside your existing Python installation in the **user scripts directory**. This is the standard location where pip installs command-line tools, and is typically already on your system PATH.
+For convenience, all tools install alongside your existing Python installation in the **user scripts directory** — the standard location where pip installs command-line tools, typically already on your system PATH.
 
 ```powershell
-# Your Python user scripts directory — where pip installs command-line tools
+# --- Setup ---
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 Write-Host "Tools directory: $TOOLS_DIR"
-
-# Ensure it exists
 New-Item -ItemType Directory -Force -Path $TOOLS_DIR | Out-Null
-```
-
-> **Tip:** On most GFE machines this resolves to something like `C:\Users\<YourName>\AppData\Roaming\Python\Python313\Scripts`.
-
-### Install Node.js
-
-```powershell
-$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 cd $TOOLS_DIR
 
-# Download portable Node.js (check https://nodejs.org for latest LTS version)
+# --- Node.js (check https://nodejs.org for latest LTS version) ---
 $NODE_VERSION = "20.18.1"
 python -c "import urllib.request; urllib.request.urlretrieve('https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip', 'node.zip')"
 Expand-Archive node.zip -DestinationPath . -Force
-
-# Rename extracted folder
 if (Test-Path "nodejs") { Remove-Item "nodejs" -Recurse -Force }
 Rename-Item "node-v$NODE_VERSION-win-x64" "nodejs"
 Remove-Item node.zip
+Write-Host "Node.js installed" -ForegroundColor Green
 
-# Add to user PATH
-$nodePath = "$TOOLS_DIR\nodejs"
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($currentPath -notlike "*$nodePath*") {
-    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$nodePath", "User")
-}
-
-Write-Host "Node.js installed to $nodePath" -ForegroundColor Green
-```
-
-> **If blocked:** If the download or execution fails due to Group Policy, request Node.js 20 LTS from your IT team through your organization's software provisioning process. See [For IT Teams](#for-it-teams).
-
-### Install Git
-
-```powershell
-$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-cd $TOOLS_DIR
-
-# Download Git archive (check https://github.com/git-for-windows/git/releases for latest)
+# --- Git (check https://github.com/git-for-windows/git/releases for latest) ---
 # Using .tar.bz2 because .7z.exe self-extractors are blocked by Group Policy on many GFE machines
 python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2', 'git.tar.bz2')"
-
-# Extract using Python's tarfile module
 python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
 Remove-Item git.tar.bz2
+Write-Host "Git installed" -ForegroundColor Green
 
-# Add to user PATH
-$gitPath = "$TOOLS_DIR\git\bin"
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($currentPath -notlike "*$gitPath*") {
-    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$gitPath", "User")
-}
-
-Write-Host "Git installed to $gitPath" -ForegroundColor Green
-```
-
-> **If blocked:** Request Git for Windows 2.40+ from your IT team. Claude Code requires Git Bash (`bash.exe`), which is included in the full Git distribution. See [For IT Teams](#for-it-teams).
-
-### Install Databricks CLI
-
-```powershell
-$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-cd $TOOLS_DIR
-
-# Download Databricks CLI (check https://github.com/databricks/cli/releases for latest)
+# --- Databricks CLI (check https://github.com/databricks/cli/releases for latest) ---
 python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip', 'databricks.zip')"
 Expand-Archive databricks.zip -DestinationPath "databricks" -Force
 Remove-Item databricks.zip
-
-# Add to user PATH
-$databricksPath = "$TOOLS_DIR\databricks"
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($currentPath -notlike "*$databricksPath*") {
-    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$databricksPath", "User")
-}
-
 Write-Host "Databricks CLI installed" -ForegroundColor Green
+
+# --- Add all tools to PATH at once ---
+$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+foreach ($p in $newPaths) {
+    if ($currentPath -notlike "*$p*") { $currentPath += ";$p" }
+}
+[Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
+Write-Host "PATH updated" -ForegroundColor Green
 ```
 
-> **If blocked:** Request Databricks CLI from your IT team. See [For IT Teams](#for-it-teams).
+> **If any download or execution is blocked by Group Policy**, request the tools from your IT team. See [For IT Teams](#for-it-teams).
+
+> **Tip:** On most GFE machines `$TOOLS_DIR` resolves to something like `C:\Users\<YourName>\AppData\Roaming\Python\Python313\Scripts`.
 
 ### Verify all prerequisites
 
@@ -312,25 +267,30 @@ Create MCP config:
 cd "$env:USERPROFILE\my-databricks-project"
 ```
 
-Create a `.env` file with your Databricks endpoint configuration. Get these values from your Databricks administrator:
+Create a `.env` file with your Databricks endpoint configuration. Replace the workspace URL, endpoint name, and PAT with your actual values from your Databricks administrator:
 
 ```powershell
+# Auto-detect Git Bash path from the install above
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+$GIT_BASH = "$TOOLS_DIR\git\bin\bash.exe"
+
 @"
 # Databricks-managed Claude endpoint configuration
+# Replace these three values with your actual workspace details
 ANTHROPIC_MODEL=databricks-claude-sonnet-4-5
 ANTHROPIC_BASE_URL=https://your-workspace.cloud.databricks.com/serving-endpoints/your-endpoint
 ANTHROPIC_AUTH_TOKEN=dapi1234567890abcdef
+
+# Required settings
 ANTHROPIC_CUSTOM_HEADERS=x-databricks-use-coding-agent-mode: true
 CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
+
+# Git Bash path (auto-detected from portable install)
+CLAUDE_CODE_GIT_BASH_PATH=$GIT_BASH
 "@ | Out-File -FilePath ".env" -Encoding UTF8
-```
 
-Replace the values above with your actual workspace URL, endpoint name, and PAT.
-
-Optional — add this line if Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH":
-
-```
-CLAUDE_CODE_GIT_BASH_PATH=C:\Users\YourName\AppData\Roaming\Python\Python313\Scripts\git\bin\bash.exe
+Write-Host "Created .env file — edit it with your actual workspace values:" -ForegroundColor Green
+Write-Host "  notepad .env" -ForegroundColor Gray
 ```
 
 ## Create the launch script
