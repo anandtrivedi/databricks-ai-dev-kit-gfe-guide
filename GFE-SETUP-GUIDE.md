@@ -111,11 +111,11 @@ for attempt in range(3):
 
 ```
 
-Then run the download and extract:
+Then run the download and extract (extraction takes several minutes — progress will be shown):
 
 ```powershell
 python "$env:TEMP\dl_git.py"
-python -c "import tarfile; print('Extracting Git (this may take a minute)...'); tarfile.open('git.tar.bz2').extractall('git'); print('Done.')"
+python -c "import tarfile,sys;t=tarfile.open('git.tar.bz2');m=t.getmembers();n=len(m);print(f'Extracting {n} files (this takes a few minutes)...');[((t.extract(x,'git'),print(f'\r  {i+1}/{n} files',end='',flush=True)) if (i+1)%200==0 or i+1==n else t.extract(x,'git')) for i,x in enumerate(m)];print('\nDone.')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
 
