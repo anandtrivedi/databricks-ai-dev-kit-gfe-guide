@@ -48,18 +48,25 @@ python --version
 
 If Python is not available, request it through your IT team or download from https://www.python.org/downloads/.
 
-### Install Node.js, Git, and Databricks CLI
+### Locate your tools directory
 
 For convenience, all tools install alongside your existing Python installation in the **user scripts directory** — the standard location where pip installs command-line tools, typically already on your system PATH.
 
 ```powershell
-# --- Setup ---
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 Write-Host "Tools directory: $TOOLS_DIR"
 New-Item -ItemType Directory -Force -Path $TOOLS_DIR | Out-Null
 cd $TOOLS_DIR
 
-# --- Node.js (check https://nodejs.org for latest LTS version) ---
+```
+
+> **Tip:** On most GFE machines `$TOOLS_DIR` resolves to something like `C:\Users\<YourName>\AppData\Roaming\Python\Python313\Scripts`.
+
+### Install Node.js
+
+Check https://nodejs.org for the latest LTS version.
+
+```powershell
 $NODE_VERSION = "20.18.1"
 python -c "import urllib.request; urllib.request.urlretrieve('https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip', 'node.zip')"
 Expand-Archive node.zip -DestinationPath . -Force
@@ -68,20 +75,40 @@ Rename-Item "node-v$NODE_VERSION-win-x64" "nodejs"
 Remove-Item node.zip
 Write-Host "Node.js installed" -ForegroundColor Green
 
-# --- Git (check https://github.com/git-for-windows/git/releases for latest) ---
-# Using .tar.bz2 because .7z.exe self-extractors are blocked by Group Policy on many GFE machines
+```
+
+### Install Git
+
+Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` format because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines.
+
+```powershell
 python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2', 'git.tar.bz2')"
 python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
 
-# --- Databricks CLI (check https://github.com/databricks/cli/releases for latest) ---
+```
+
+### Install Databricks CLI
+
+Check https://github.com/databricks/cli/releases for the latest version.
+
+```powershell
 python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip', 'databricks.zip')"
 Expand-Archive databricks.zip -DestinationPath "databricks" -Force
 Remove-Item databricks.zip
 Write-Host "Databricks CLI installed" -ForegroundColor Green
 
-# --- Add all tools to PATH at once ---
+```
+
+> **If any download or execution is blocked by Group Policy**, request the tools from your IT team. See [For IT Teams](#for-it-teams).
+
+### Update PATH
+
+Add all three tools to your user PATH so they are available in new PowerShell sessions:
+
+```powershell
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 $newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 foreach ($p in $newPaths) {
@@ -89,11 +116,8 @@ foreach ($p in $newPaths) {
 }
 [Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
 Write-Host "PATH updated" -ForegroundColor Green
+
 ```
-
-> **If any download or execution is blocked by Group Policy**, request the tools from your IT team. See [For IT Teams](#for-it-teams).
-
-> **Tip:** On most GFE machines `$TOOLS_DIR` resolves to something like `C:\Users\<YourName>\AppData\Roaming\Python\Python313\Scripts`.
 
 ### Verify all prerequisites
 
@@ -118,6 +142,7 @@ All four should print version numbers. If any fail, see [Troubleshooting](#troub
 host  = https://your-workspace.cloud.databricks.com
 token = dapi1234567890abcdef...
 "@ | Out-File -FilePath "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
+
 ```
 
 Replace with your actual workspace URL and token from your Databricks administrator.
@@ -164,6 +189,7 @@ cd $PROJECT_DIR
 
 # Download and run the installer (requires bash from Git installation)
 bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
+
 ```
 
 When prompted:
@@ -202,6 +228,7 @@ Remove-Item "$env:TEMP\ai-dev-kit-extract" -Recurse -Force
 Remove-Item "ai-dev-kit.zip"
 
 Write-Host "AI Dev Kit installed" -ForegroundColor Green
+
 ```
 
 Install Python dependencies:
@@ -212,6 +239,7 @@ pip install databricks-sdk python-dotenv anthropic openai pydantic
 # Install the MCP server packages from the extracted AI Dev Kit
 pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
 pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
+
 ```
 
 > **If pip is also blocked**, download wheel files from https://pypi.org manually, then: `pip install --no-index --find-links=./packages databricks-sdk python-dotenv anthropic`
@@ -234,6 +262,7 @@ Create MCP config:
   }
 }
 "@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+
 ```
 
 **If Databricks CLI is not installed (use direct credentials instead):**
@@ -253,6 +282,7 @@ Create MCP config:
   }
 }
 "@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+
 ```
 
 > **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
@@ -291,6 +321,7 @@ CLAUDE_CODE_GIT_BASH_PATH=$GIT_BASH
 
 Write-Host "Created .env file — edit it with your actual workspace values:" -ForegroundColor Green
 Write-Host "  notepad .env" -ForegroundColor Gray
+
 ```
 
 ## Create the launch script
@@ -336,6 +367,7 @@ if ($env:CLAUDE_CODE_GIT_BASH_PATH) {
 Write-Host ""
 claude
 '@ | Out-File -FilePath "$PROJECT_DIR\scripts\start.ps1" -Encoding UTF8
+
 ```
 
 > **If you downloaded the helper scripts** from GitHub earlier, you can skip this step — just copy them into your project: `Copy-Item ".\scripts" -Destination "$PROJECT_DIR\scripts" -Recurse -Force`
