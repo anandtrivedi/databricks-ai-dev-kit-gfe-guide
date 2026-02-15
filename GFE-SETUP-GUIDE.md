@@ -79,12 +79,28 @@ Write-Host "Node.js installed" -ForegroundColor Green
 
 ### Install Git
 
-Check https://github.com/git-for-windows/git/releases for the latest version. We use **MinGit** — a smaller download that includes `git.exe` and `bash.exe` (required by Claude Code).
+Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` archive because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines. The download uses chunked transfer with retries because large files can be interrupted by network timeouts.
 
 ```powershell
-python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip', 'mingit.zip')"
-Expand-Archive mingit.zip -DestinationPath "git" -Force
-Remove-Item mingit.zip
+python -c @"
+import urllib.request, time, os
+url = 'https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2'
+out = 'git.tar.bz2'
+for attempt in range(3):
+    try:
+        print(f'Downloading Git (attempt {attempt+1}/3)...')
+        urllib.request.urlretrieve(url, out)
+        print(f'Done ({os.path.getsize(out):,} bytes)')
+        break
+    except Exception as e:
+        print(f'Failed: {e}')
+        if attempt < 2:
+            time.sleep(5)
+        else:
+            raise
+"@
+python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
+Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
 
 ```
@@ -109,7 +125,7 @@ Add all three tools to your user PATH so they are available in new PowerShell se
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\cmd", "$TOOLS_DIR\databricks")
+$newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 foreach ($p in $newPaths) {
     if ($currentPath -notlike "*$p*") { $currentPath += ";$p" }
@@ -302,7 +318,7 @@ Create a `.env` file with your Databricks endpoint configuration. Replace the wo
 ```powershell
 # Auto-detect Git Bash path from the install above
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-$GIT_BASH = "$TOOLS_DIR\git\usr\bin\bash.exe"
+$GIT_BASH = "$TOOLS_DIR\git\bin\bash.exe"
 
 @"
 # Databricks-managed Claude endpoint configuration
@@ -529,7 +545,7 @@ python -c "import urllib.request; urllib.request.urlretrieve('https://internal-s
 C:\Users\<YourName>\
   AppData\Roaming\Python\Python3XX\Scripts\   # Python user scripts (tools installed here)
     ├── nodejs\                # Node.js distribution
-    ├── git\                   # MinGit (cmd\git.exe, usr\bin\bash.exe)
+    ├── git\                   # Git distribution (bin\git.exe, bin\bash.exe)
     ├── databricks\            # Databricks CLI
     ├── pip.exe                # pip (pre-existing)
     └── ...                    # Other pip-installed tools
