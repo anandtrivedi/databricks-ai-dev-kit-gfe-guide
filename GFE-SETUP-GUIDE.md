@@ -617,7 +617,7 @@ Even after IT installs the prerequisites, the AI Dev Kit installer itself needs 
 | AI Dev Kit Python deps | pypi.org | Typically works on NIPRNET (pip uses allowed network path) |
 | Databricks CLI config | Your workspace URL | Must be reachable from Citrix |
 
-If `github.com` is accessible from the browser or via Python, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself. See [NIPRNET-CITRIX-FINDINGS.md](NIPRNET-CITRIX-FINDINGS.md) for detailed findings on what works and what doesn't.
+If `github.com` is accessible from the browser or via Python, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself.
 
 ## After IT installs the tools
 

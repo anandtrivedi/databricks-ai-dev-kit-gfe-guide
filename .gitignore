@@ -1,6 +1,9 @@
 # Never commit tokens/secrets
 .env
 
+# Internal findings (not for public repo)
+NIPRNET-CITRIX-FINDINGS.md
+
 # ai-dev-kit local config
 .ai-dev-kit/
 
