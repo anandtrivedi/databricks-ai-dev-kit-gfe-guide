@@ -2,7 +2,7 @@
 
 **Complete installation guide for Government Field Engineering machines.**
 
-This guide walks you through installing the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) on Windows machines commonly used in government environments. It covers both admin and non-admin scenarios, and handles restricted networks and corporate proxies.
+This guide walks you through installing the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) on Windows machines commonly used in government environments. It covers restricted networks, locked-down desktops, and portable (no-admin) scenarios.
 
 > **Upstream project:** All skills and MCP servers come from [databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit). This guide only covers GFE-specific installation steps.
 
@@ -39,24 +39,18 @@ This gives you:
 | NIPRNET Citrix or locked-down environment with Group Policy | [NIPRNET / Locked-down Environments](#niprnet--locked-down-citrix-environments) (start here) |
 | npm registry or GitHub APIs are blocked by your network | [Restricted Network Installation](#restricted-network-installation) |
 | You do NOT have admin privileges but have internet access | [Portable Installation (No Admin)](#portable-installation-no-admin) |
-| You have local admin privileges and unrestricted internet | [Standard Installation (Admin)](#standard-installation-admin) |
 
 **Not sure?** Run this quick test in PowerShell:
 
 ```powershell
-# Check admin status
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-Write-Host "Admin: $isAdmin"
-
 # Check network access
 Test-NetConnection registry.npmjs.org -Port 443
 Test-NetConnection raw.githubusercontent.com -Port 443
 ```
 
 - **Commands above fail or are blocked by Group Policy** → NIPRNET / Locked-down Environments
-- **Either connection fails** → Restricted Network Installation (works with or without admin)
-- **Admin = False, both connections succeed** → Portable Installation (No Admin)
-- **Admin = True, both connections succeed** → Standard Installation (Admin)
+- **Either connection fails** → Restricted Network Installation
+- **Both connections succeed** → Portable Installation (No Admin)
 
 ---
 
@@ -135,7 +129,7 @@ If `github.com` is accessible from the browser, the [Restricted Network Installa
 
 ## After IT installs the tools
 
-Once Node.js, Git, and the Databricks CLI are properly installed by IT, follow the [Standard Installation (Admin)](#standard-installation-admin) path starting from **Install Claude Code**, since the prerequisites will already be in place.
+Once Node.js, Git, and the Databricks CLI are properly installed by IT, follow the [Portable Installation (No Admin)](#portable-installation-no-admin) path starting from **Install Claude Code** (Step 6), since the prerequisites will already be in place.
 
 You will also need your Databricks administrator to provide:
 - Your workspace URL
@@ -154,9 +148,7 @@ This path uses direct downloads from official websites instead of package regist
 
 ## Install prerequisites
 
-**If you have admin privileges:** Follow the prerequisite steps from [Standard Installation (Admin)](#standard-installation-admin) — winget and standard installers download from official sites (nodejs.org, python.org, git-scm.com).
-
-**If you do NOT have admin privileges:** Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from the same official sites.
+Follow Steps 1-5 (Node.js through Configure Databricks CLI) from [Portable Installation (No Admin)](#portable-installation-no-admin). Those steps download portable packages from official sites (nodejs.org, python.org, git-scm.com) and don't require admin privileges.
 
 > **If even official sites are blocked**, see [Alternative: Internal hosting](#alternative-host-installation-bundle-internally) at the bottom of this guide.
 
@@ -367,12 +359,13 @@ pip --version
 ```powershell
 cd "$env:USERPROFILE\.databricks-tools"
 
-# Download PortableGit (check https://github.com/git-for-windows/git/releases for latest)
-Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/PortableGit-2.47.1-64-bit.7z.exe" -OutFile "portablegit.exe"
+# Download Git archive (check https://github.com/git-for-windows/git/releases for latest)
+# Using .tar.bz2 format because the .7z.exe self-extractor is blocked by Group Policy on many GFE machines
+Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2" -OutFile "git.tar.bz2"
 
-# Self-extracting archive
-.\portablegit.exe -o"git" -y
-Remove-Item portablegit.exe
+# Extract using Python (tar.bz2 requires Python's tarfile module)
+python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
+Remove-Item git.tar.bz2
 
 # Add to user PATH
 $gitPath = "$env:USERPROFILE\.databricks-tools\git\bin"
@@ -383,6 +376,8 @@ if ($currentPath -notlike "*$gitPath*") {
 
 Write-Host "Git installed to $gitPath" -ForegroundColor Green
 ```
+
+> **Note:** We use the `.tar.bz2` format instead of the PortableGit `.7z.exe` self-extractor because self-extracting archives are commonly blocked by Group Policy (AppLocker/SRP) on GFE machines. The `.tar.bz2` archive contains the full Git distribution including `bash.exe`, which Claude Code requires.
 
 **Close and reopen PowerShell**, then verify:
 
@@ -454,79 +449,9 @@ Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
 
 ---
 
-# Standard Installation (Admin)
-
-**Use if you have local admin privileges and unrestricted internet.**
-
-This is the fastest path. Uses standard installers and package managers.
-
-## Install prerequisites
-
-Download and run the installers from:
-- **Node.js LTS:** https://nodejs.org/ (use the LTS installer)
-- **Python 3.11+:** https://www.python.org/downloads/ (check "Add to PATH" during install)
-- **Git:** https://git-scm.com/download/win
-
-> **If winget is available** on your machine (uncommon on GFE), you can alternatively run:
-> `winget install OpenJS.NodeJS.LTS && winget install Python.Python.3.11 && winget install Git.Git`
-
-Close and reopen PowerShell, then verify:
-
-```powershell
-node --version
-python --version
-git --version
-```
-
-## Install Databricks CLI
-
-Download from [GitHub releases](https://github.com/databricks/cli/releases) and add to your PATH.
-
-Verify:
-
-```powershell
-databricks --version
-```
-
-## Configure Databricks CLI
-
-```powershell
-@"
-[my-workspace]
-host  = https://your-workspace.cloud.databricks.com
-token = dapi1234567890abcdef...
-"@ | Out-File -FilePath "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
-```
-
-Replace with your actual workspace URL and token from your Databricks administrator.
-
-Verify:
-
-```powershell
-databricks --profile my-workspace current-user me
-```
-
-## Install Claude Code
-
-```powershell
-npm install -g @anthropic-ai/claude-code
-```
-
-Verify:
-
-```powershell
-claude --version
-```
-
-## Install AI Dev Kit
-
-Continue to [Install AI Dev Kit](#install-ai-dev-kit) below.
-
----
-
 # Install AI Dev Kit
 
-This step applies to the **Standard** and **Portable** installation paths. (Restricted network users already completed this in the previous section.)
+This step applies to the **Portable** installation path. (Restricted network users already completed this in the previous section.)
 
 ```powershell
 # Create project directory
@@ -538,7 +463,7 @@ cd $PROJECT_DIR
 bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
 ```
 
-> **Note:** The `bash` command comes from Git (Git Bash). If you installed Git via winget or PortableGit in the previous steps, `bash` should be available. If not, open Git Bash from your start menu and run the curl command there.
+> **Note:** The `bash` command comes from Git (Git Bash). If you installed Git via PortableGit in the previous steps, `bash` should be available. If not, open Git Bash from your start menu and run the curl command there.
 
 When prompted:
 1. **Select tools** → `Claude Code`
@@ -600,7 +525,7 @@ Optional (only if Git Bash is not on your system PATH):
 |----------|-------------|---------|
 | `CLAUDE_CODE_GIT_BASH_PATH` | Full path to `bash.exe` from Git | `C:\Program Files\Git\bin\bash.exe` |
 
-> **When do you need this?** Claude Code on Windows requires Git Bash. If `bash` is already on your PATH (typical when Git is installed via winget or standard installer), you can skip this. If Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH", add this variable to your `.env` file pointing to where bash.exe is located.
+> **When do you need this?** Claude Code on Windows requires Git Bash. If `bash` is already on your PATH (typical when Git is installed to `C:\Program Files\Git`), you can skip this. If Claude Code shows "requires git-bash" or "set CLAUDE_CODE_GIT_BASH_PATH", add this variable to your `.env` file pointing to where bash.exe is located.
 
 ## Launch Claude Code
 
@@ -730,15 +655,4 @@ C:\Users\<YourName>\
 
 ---
 
-# What you can build
-
-Once running, ask Claude to build:
-
-- **Data pipelines** - "Create a medallion pipeline from CSV to Delta"
-- **Jobs** - "Create a job that runs my notebook daily at 6am"
-- **Dashboards** - "Build a dashboard showing sales by region"
-- **SQL queries** - "Query top 10 customers by revenue"
-- **Apps** - "Build a Databricks App with React frontend"
-- **ML models** - "Deploy a model to a serving endpoint"
-
-See the [AI Dev Kit documentation](https://github.com/databricks-solutions/ai-dev-kit) for the full list of available skills.
+For the full list of available skills and what you can build, see the [AI Dev Kit documentation](https://github.com/databricks-solutions/ai-dev-kit).
