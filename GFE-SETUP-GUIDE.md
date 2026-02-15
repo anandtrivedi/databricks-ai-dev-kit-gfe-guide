@@ -85,17 +85,24 @@ Download Git (retries up to 3 times if the connection drops):
 
 ```powershell
 @'
-import urllib.request, time, os
+import urllib.request, sys, time
 url = 'https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2'
 out = 'git.tar.bz2'
+def progress(block, size, total):
+    mb = block * size / 1048576
+    if total > 0:
+        pct = min(100, block * size * 100 // total)
+        print(f'\r  {mb:.1f} MB / {total/1048576:.1f} MB ({pct}%)', end='', flush=True)
+    else:
+        print(f'\r  {mb:.1f} MB downloaded', end='', flush=True)
 for attempt in range(3):
     try:
         print(f'Downloading Git (attempt {attempt+1}/3)...')
-        urllib.request.urlretrieve(url, out)
-        print(f'Done ({os.path.getsize(out):,} bytes)')
+        urllib.request.urlretrieve(url, out, progress)
+        print('\nDone.')
         break
     except Exception as e:
-        print(f'Failed: {e}')
+        print(f'\nFailed: {e}')
         if attempt < 2:
             time.sleep(5)
         else:
