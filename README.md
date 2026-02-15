@@ -12,7 +12,8 @@ The [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) 
 
 | File | Purpose |
 |------|---------|
-| [GFE-SETUP-GUIDE.md](GFE-SETUP-GUIDE.md) | Complete installation walkthrough (admin + non-admin paths) |
+| [GFE-SETUP-GUIDE.md](GFE-SETUP-GUIDE.md) | Complete installation walkthrough (admin, no-admin, restricted network, NIPRNET) |
+| [NIPRNET-CITRIX-FINDINGS.md](NIPRNET-CITRIX-FINDINGS.md) | Findings from NIPRNET Citrix testing and IT request templates |
 | [setup-env.ps1](scripts/setup-env.ps1) | Interactive wizard to generate your `.env` configuration |
 | [setup-proxy.ps1](scripts/setup-proxy.ps1) | Auto-detect and configure corporate proxy for all tools |
 | [start.ps1](scripts/start.ps1) | PowerShell launch script for Claude Code |

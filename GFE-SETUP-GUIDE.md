@@ -584,6 +584,54 @@ List my SQL warehouses
 
 ---
 
+# NIPRNET / Locked-down Citrix Environments
+
+If you are on a NIPRNET Citrix virtual desktop or similarly locked-down environment, the self-service installation paths above will likely not work due to:
+
+- **Group Policy (AppLocker/SRP):** Executables are only allowed to run from IT-approved directories (e.g., `C:\Program Files`). Downloading an `.exe` to your Desktop or user profile and running it will be blocked.
+- **PowerShell download restrictions:** `Invoke-WebRequest` and similar commands are blocked by network policy.
+- **No admin privileges:** You cannot install software to `C:\Program Files` or modify system PATH.
+- **Package registries blocked:** npm (registry.npmjs.org) and potentially PyPI (pypi.org) may be unreachable.
+
+## What IT needs to provide
+
+The Databricks AI Dev Kit requires the following software installed to a Group Policy-approved path (e.g., `C:\Program Files`) and added to the system PATH:
+
+| Software | Version | Why it's needed | Official source |
+|----------|---------|-----------------|-----------------|
+| Node.js | 20.x LTS | Required runtime for Claude Code | https://nodejs.org |
+| Git for Windows | 2.40+ | Required by Claude Code (Git Bash) | https://git-scm.com |
+| Python | 3.11+ | Required for AI Dev Kit MCP server | https://python.org |
+| Databricks CLI | Latest | Workspace interaction | https://github.com/databricks/cli |
+
+Submit a request through your organization's approved software provisioning process (Software Center, SCCM, ServiceNow, etc.).
+
+## Network access for AI Dev Kit installation
+
+Even after IT installs the prerequisites, the AI Dev Kit installer itself needs network access. The standard installer downloads from `raw.githubusercontent.com`, which may be blocked. Your IT team should be aware of the following network dependencies:
+
+| Action | URL needed | Alternative if blocked |
+|--------|-----------|----------------------|
+| AI Dev Kit installer | raw.githubusercontent.com | Download zip from github.com (see Restricted Network section) |
+| Claude Code install | registry.npmjs.org | Download `.tgz` manually from npmjs.com |
+| AI Dev Kit Python deps | pypi.org | Typically works on NIPRNET (pip uses allowed network path) |
+| Databricks CLI config | Your workspace URL | Must be reachable from Citrix |
+
+If `github.com` is accessible from the browser or via Python, the [Restricted Network Installation](#restricted-network-installation) path can be used for the AI Dev Kit itself. See [NIPRNET-CITRIX-FINDINGS.md](NIPRNET-CITRIX-FINDINGS.md) for detailed findings on what works and what doesn't.
+
+## After IT installs the tools
+
+Once Node.js, Git, and the Databricks CLI are properly installed by IT, follow the [Standard Installation (Admin)](#standard-installation-admin) path starting from **Install Claude Code**, since the prerequisites will already be in place.
+
+You will also need your Databricks administrator to provide:
+- Your workspace URL
+- A Claude serving endpoint name
+- A Personal Access Token (PAT)
+
+See [Configure and Launch](#configure-and-launch) for the environment setup.
+
+---
+
 # Alternative: Host installation bundle internally
 
 If your network is very restrictive (all external sites blocked), ask your Databricks administrator to:
