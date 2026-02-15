@@ -82,7 +82,7 @@ Write-Host "Node.js installed" -ForegroundColor Green
 Check https://github.com/git-for-windows/git/releases for the latest version. We use the `.tar.bz2` archive because `.7z.exe` self-extractors are blocked by Group Policy on many GFE machines. The download uses chunked transfer with retries because large files can be interrupted by network timeouts.
 
 ```powershell
-python -c @"
+@'
 import urllib.request, time, os
 url = 'https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.tar.bz2'
 out = 'git.tar.bz2'
@@ -98,7 +98,7 @@ for attempt in range(3):
             time.sleep(5)
         else:
             raise
-"@
+'@ | python
 python -c "import tarfile; tarfile.open('git.tar.bz2').extractall('git')"
 Remove-Item git.tar.bz2
 Write-Host "Git installed" -ForegroundColor Green
