@@ -104,7 +104,7 @@ Write-Host "Git installed" -ForegroundColor Green
 Check https://github.com/databricks/cli/releases for the latest version.
 
 ```powershell
-python -c "import urllib.request; r=urllib.request.urlopen('https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip'); open('databricks.zip','wb').write(r.read()); print('Downloaded',r.url)"
+python -c "import urllib.request,json; tag=json.loads(urllib.request.urlopen('https://api.github.com/repos/databricks/cli/releases/latest').read())['tag_name']; print(f'Downloading Databricks CLI {tag}...'); urllib.request.urlretrieve(f'https://github.com/databricks/cli/releases/download/{tag}/databricks_cli_windows_amd64.zip','databricks.zip'); print('Done.')"
 Expand-Archive databricks.zip -DestinationPath "databricks" -Force
 Remove-Item databricks.zip
 Write-Host "Databricks CLI installed" -ForegroundColor Green
