@@ -120,12 +120,12 @@ Add all three tools to your user PATH so they are available in new PowerShell se
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 $newPaths = @("$TOOLS_DIR\nodejs", "$TOOLS_DIR\git\bin", "$TOOLS_DIR\databricks")
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$userPath = (Get-ItemProperty "HKCU:\Environment").Path
 foreach ($p in $newPaths) {
-    if ($currentPath -notlike "*$p*") { $currentPath += ";$p" }
+    if ($userPath -notlike "*$p*") { $userPath += ";$p" }
 }
-[Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
-Write-Host "PATH updated" -ForegroundColor Green
+setx PATH "$userPath"
+Write-Host "PATH updated — close and reopen PowerShell to use the new paths" -ForegroundColor Green
 
 ```
 
@@ -147,11 +147,7 @@ All four should print version numbers. If any fail, see [Troubleshooting](#troub
 ## Configure Databricks CLI
 
 ```powershell
-@"
-[my-workspace]
-host  = https://your-workspace.cloud.databricks.com
-token = dapi1234567890abcdef...
-"@ | Out-File -FilePath "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
+"[my-workspace]", "host  = https://your-workspace.cloud.databricks.com", "token = dapi1234567890abcdef..." | Out-File "$env:USERPROFILE\.databrickscfg" -Encoding ASCII
 
 ```
 
@@ -180,7 +176,8 @@ claude --version
 > **If npm is blocked:** Download the package directly and install from the local file:
 >
 > ```powershell
-> $VERSION = "1.0.24"  # Check https://www.npmjs.com/package/@anthropic-ai/claude-code for latest
+> # Check https://www.npmjs.com/package/@anthropic-ai/claude-code for latest version
+> $VERSION = "1.0.24"
 > python -c "import urllib.request; urllib.request.urlretrieve('https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-$VERSION.tgz', 'claude-code.tgz')"
 > npm install -g claude-code.tgz
 > Remove-Item claude-code.tgz
@@ -212,12 +209,12 @@ When prompted:
 If `raw.githubusercontent.com` is blocked or `bash` is not available, install manually:
 
 ```powershell
-# Download AI Dev Kit zip
-python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip')"
-
 $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
 New-Item -ItemType Directory -Force -Path $PROJECT_DIR
 cd $PROJECT_DIR
+
+# Download AI Dev Kit zip
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip')"
 
 # Extract
 Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
@@ -259,39 +256,14 @@ Create MCP config:
 **If you have Databricks CLI configured with a profile:**
 
 ```powershell
-@"
-{
-  "mcpServers": {
-    "databricks": {
-      "command": "python",
-      "args": ["-m", "databricks_mcp_server"],
-      "env": {
-        "DATABRICKS_CONFIG_PROFILE": "my-workspace"
-      }
-    }
-  }
-}
-"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_CONFIG_PROFILE': 'my-workspace'}}}}, open('.mcp.json', 'w'), indent=2)"
 
 ```
 
 **If Databricks CLI is not installed (use direct credentials instead):**
 
 ```powershell
-@"
-{
-  "mcpServers": {
-    "databricks": {
-      "command": "python",
-      "args": ["-m", "databricks_mcp_server"],
-      "env": {
-        "DATABRICKS_HOST": "https://your-workspace.cloud.databricks.com",
-        "DATABRICKS_TOKEN": "dapi1234567890abcdef..."
-      }
-    }
-  }
-}
-"@ | Out-File -FilePath ".mcp.json" -Encoding UTF8
+python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_HOST': 'https://your-workspace.cloud.databricks.com', 'DATABRICKS_TOKEN': 'dapi1234567890abcdef...'}}}}, open('.mcp.json', 'w'), indent=2)"
 
 ```
 
@@ -377,6 +349,7 @@ if ($env:CLAUDE_CODE_GIT_BASH_PATH) {
 Write-Host ""
 claude
 '@ | Out-File -FilePath "$PROJECT_DIR\scripts\start.ps1" -Encoding UTF8
+Write-Host "Launch script created" -ForegroundColor Green
 
 ```
 
@@ -547,7 +520,6 @@ C:\Users\<YourName>\
   .ai-dev-kit\                 # MCP server files (manual install only)
   my-databricks-project\
     ├── .env                   # Your endpoint config (DO NOT commit)
-    ├── .env.example           # Config template
     ├── scripts\
     │   └── start.ps1          # Launch script
     ├── .claude\skills\        # 26+ Databricks skills
