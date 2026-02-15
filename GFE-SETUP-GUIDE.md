@@ -117,10 +117,11 @@ Write-Host "Databricks CLI installed" -ForegroundColor Green
 
 ### Update PATH
 
-Add all three tools to your user PATH so they are available in new PowerShell sessions:
+Add all three tools to your PATH — both for the current session and permanently:
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+$env:PATH += ";$TOOLS_DIR\nodejs;$TOOLS_DIR\git\bin;$TOOLS_DIR\databricks"
 $userPath = (Get-ItemProperty "HKCU:\Environment").Path + ";$TOOLS_DIR\nodejs;$TOOLS_DIR\git\bin;$TOOLS_DIR\databricks"
 setx PATH "$userPath"
 Write-Host "PATH updated" -ForegroundColor Green
@@ -129,7 +130,7 @@ Write-Host "PATH updated" -ForegroundColor Green
 
 ### Verify all prerequisites
 
-**Close and reopen PowerShell**, then verify:
+Verify the tools are available:
 
 ```powershell
 node --version
