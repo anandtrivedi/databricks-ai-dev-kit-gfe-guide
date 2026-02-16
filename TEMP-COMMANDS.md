@@ -64,8 +64,16 @@ bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; which pytho
 cd "$env:USERPROFILE\my-databricks-project"
 ```
 
+Download install.sh with Python (curl isn't available in portable Git):
+
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
+python -c "import urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh', 'install.sh'); print('Done.')"
+```
+
+Run it:
+
+```powershell
+bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; bash install.sh"
 ```
 
 ## Cleanup
