@@ -30,13 +30,7 @@ Any missing? Continue with [Full Setup](#full-setup) below.
 
 ## (Optional) Download helper scripts
 
-This repo includes helper scripts for proxy detection, environment setup, and launching Claude Code. If you can clone or download from GitHub:
-
-```powershell
-git clone https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide.git
-```
-
-> **Can't download?** That's fine — this guide works entirely from the browser. All commands can be typed or pasted directly into PowerShell. The helper scripts are optional convenience tools.
+This repo includes helper scripts for proxy detection, environment setup, and launching Claude Code. You can browse them at https://github.com/anandtrivedi/databricks-ai-dev-kit-gfe-guide — but they're entirely optional. This guide works from the browser alone; all commands can be typed or pasted directly into PowerShell.
 
 ## Install prerequisites
 

@@ -1,10 +1,8 @@
-# Standard Installation (Admin)
+# Admin Prerequisites Installation
 
-> **Status: Pending removal.** This path assumes local admin privileges and unrestricted internet access. Most GFE machines do not grant local admin privileges per DoD STIG requirements (the built-in administrator account is typically disabled). We are not confident this path is viable for the target audience. It may be removed in a future update.
+**For Databricks administrators setting up shared machines or users on non-GFE corporate laptops.**
 
-**Use if you have local admin privileges and unrestricted internet.**
-
-This path is primarily for Databricks administrators setting up shared machines or users on non-GFE corporate laptops.
+This is a supplementary reference for environments where you have local admin privileges and unrestricted internet access. Most GFE users should follow the main [GFE Setup Guide](GFE-SETUP-GUIDE.md) instead.
 
 ## Install prerequisites
 
