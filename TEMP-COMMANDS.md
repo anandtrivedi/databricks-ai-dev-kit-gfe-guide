@@ -1,48 +1,71 @@
 # Temp Commands - AI Dev Kit Installer Fix
 
-## 1. Check what bash sees
+Start fresh from step 1.
 
-```powershell
-bash -c "echo $PATH"
-```
-
-## 2. Set tools dir
+## 1. Set tools dir
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 ```
 
-## 3. Copy python3 (with confirmation)
+## 2. Check where python3.exe is
+
+```powershell
+Write-Host "git\bin: $(Test-Path "$TOOLS_DIR\git\bin\python3.exe")"
+```
+
+```powershell
+Write-Host "git\usr\bin: $(Test-Path "$TOOLS_DIR\git\usr\bin\python3.exe")"
+```
+
+## 3. Copy python3.exe to BOTH locations
 
 ```powershell
 Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force
-Write-Host "python3 ready: $TOOLS_DIR\git\bin\python3.exe" -ForegroundColor Green
 ```
 
-## 4. Verify bash can find python3
+```powershell
+Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\usr\bin\python3.exe" -Force
+```
+
+```powershell
+Write-Host "Copied python3.exe to git\bin and git\usr\bin" -ForegroundColor Green
+```
+
+## 4. Verify bash can find it now
 
 ```powershell
 bash -c "which python3"
 ```
 
-## 5. If step 4 says "not found", run the installer with explicit PATH
+## 5. If step 4 STILL says not found, check what PATH bash sees
+
+```powershell
+bash -c "echo `$PATH"
+```
+
+## 6. Try with explicit PATH (note the backtick before $PATH)
 
 ```powershell
 $bashDir = ($TOOLS_DIR -replace '\\','/') -replace '^([A-Za-z]):','/$1'
 ```
 
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$PATH'; which python3 && echo 'python3 found' || echo 'python3 NOT found'"
+Write-Host "bash path: $bashDir" -ForegroundColor Gray
 ```
 
-## 6. Run the installer with explicit PATH
+```powershell
+bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; which python3"
+```
+
+## 7. Once python3 is found, run the installer
 
 ```powershell
 cd "$env:USERPROFILE\my-databricks-project"
 ```
 
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$PATH'; curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
+bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
 ```
 
 ## Cleanup
