@@ -194,58 +194,53 @@ claude --version
 
 ## Install AI Dev Kit
 
+Create project directory:
+
 ```powershell
-# Create project directory
 $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
 New-Item -ItemType Directory -Force -Path $PROJECT_DIR
 cd $PROJECT_DIR
-
-# The installer expects "python3" (Linux convention) — create a copy so bash can find it
-$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force
-Write-Host "python3 ready: $TOOLS_DIR\git\bin\python3.exe" -ForegroundColor Green
-
-# Download and run the installer (requires bash from Git installation)
-bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
 
 ```
 
-When prompted:
-1. **Select tools** → `Claude Code`
-2. **Select profile** → `my-workspace`
-3. **Select scope** → `Project`
-
-<details><summary>Not working? Alternative: manual installation</summary>
-
-You can install manually instead:
+Download and extract:
 
 ```powershell
-$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
-New-Item -ItemType Directory -Force -Path $PROJECT_DIR
-cd $PROJECT_DIR
+python -c "import urllib.request; print('Downloading AI Dev Kit...'); urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip'); print('Done.')"
 
-# Download AI Dev Kit zip
-python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip')"
+```
 
-# Extract
+```powershell
 Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
-
-# Copy skills to project
 $extracted = Get-ChildItem "$env:TEMP\ai-dev-kit-extract" -Directory | Select-Object -First 1
+
+```
+
+Copy skills to project:
+
+```powershell
 $targetSkills = "$PROJECT_DIR\.claude\skills"
 New-Item -ItemType Directory -Force -Path $targetSkills
 Copy-Item "$($extracted.FullName)\.claude\skills\*" -Destination $targetSkills -Recurse -Force
+Write-Host "Skills copied" -ForegroundColor Green
 
-# Copy MCP server files
+```
+
+Copy MCP server files:
+
+```powershell
 $aiDevKitDir = "$env:USERPROFILE\.ai-dev-kit"
 New-Item -ItemType Directory -Force -Path $aiDevKitDir
 Copy-Item "$($extracted.FullName)\*" -Destination $aiDevKitDir -Recurse -Force
+Write-Host "MCP server files copied" -ForegroundColor Green
 
-# Cleanup
+```
+
+Cleanup:
+
+```powershell
 Remove-Item "$env:TEMP\ai-dev-kit-extract" -Recurse -Force
 Remove-Item "ai-dev-kit.zip"
-
-Write-Host "AI Dev Kit installed" -ForegroundColor Green
 
 ```
 
@@ -254,8 +249,14 @@ Install Python dependencies:
 ```powershell
 pip install databricks-sdk python-dotenv anthropic openai pydantic
 
-# Install the MCP server packages from the extracted AI Dev Kit
+```
+
+```powershell
 pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
+
+```
+
+```powershell
 pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
 
 ```
@@ -264,23 +265,32 @@ pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
 
 Create MCP config:
 
-**If you have Databricks CLI configured with a profile:**
-
 ```powershell
 python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_CONFIG_PROFILE': 'my-workspace'}}}}, open('.mcp.json', 'w'), indent=2)"
 
 ```
 
-**Alternative: use direct credentials (no Databricks CLI needed):**
+<details><summary>Alternative: use direct credentials (no Databricks CLI needed)</summary>
 
 ```powershell
 python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_HOST': 'https://your-workspace.cloud.databricks.com', 'DATABRICKS_TOKEN': 'dapi1234567890abcdef...'}}}}, open('.mcp.json', 'w'), indent=2)"
 
 ```
 
-> **Note:** Replace the host and token with your actual values. The direct credentials approach does not require the Databricks CLI to be installed.
+> **Note:** Replace the host and token with your actual values.
 
 </details>
+
+Verify:
+
+```powershell
+python -c "import databricks_mcp_server; print('MCP server OK')"
+Test-Path "$PROJECT_DIR\.claude\skills"
+Test-Path "$PROJECT_DIR\.mcp.json"
+
+```
+
+> The official AI Dev Kit bash installer (`install.sh`) does not currently work on GFE machines — it creates a Python virtual environment in a directory that is blocked by Group Policy. The manual method above installs the same components using pip directly.
 
 ---
 
@@ -397,17 +407,11 @@ List my SQL warehouses
 
 **Fix:** Use the manual download fallback in [Install Claude Code](#install-claude-code).
 
-## AI Dev Kit installer: "python3: command not found"
+## AI Dev Kit bash installer fails
 
-**Cause:** The installer script uses `python3` (Linux/macOS convention), but Windows uses `python`.
+**Cause:** The official bash installer (`install.sh`) creates a Python virtual environment in a location that is blocked by Group Policy on most GFE machines.
 
-**Fix:** The install step in this guide already handles this by copying `python.exe` as `python3.exe` into the Git `bin` directory. If you skipped that step, run: `Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force`
-
-## curl / bash installer fails
-
-**Cause:** GitHub raw content (raw.githubusercontent.com) is blocked, or `bash` is not available.
-
-**Fix:** Use the manual installation method in [Install AI Dev Kit](#install-ai-dev-kit). If `bash` isn't found, make sure Git is installed and your PATH includes the Git `bin` directory.
+**Fix:** This guide uses a manual installation method that installs the same components using pip directly. Follow the steps in [Install AI Dev Kit](#install-ai-dev-kit).
 
 ## pip install fails
 
