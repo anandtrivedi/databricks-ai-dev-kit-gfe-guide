@@ -37,7 +37,7 @@ Write-Host "bash path: $bashDir" -ForegroundColor Gray
 ## 5. Verify bash can find all tools
 
 ```powershell
-bash -c "export PATH='${bashDir}:${bashDir}/git/bin:${bashDir}/databricks:${bashDir}/nodejs:`$PATH'; which python3 && which databricks && which node && which uv && echo 'All tools found'"
+bash -c "export PATH='${bashDir}:${bashDir}/git/bin:${bashDir}/databricks:${bashDir}/nodejs:`$PATH'; command -v python3 && command -v databricks && command -v node && command -v uv && echo 'All tools found'"
 ```
 
 ## 6. Download install.sh
