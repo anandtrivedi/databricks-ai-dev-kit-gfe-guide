@@ -31,7 +31,7 @@ Copy skills to project:
 ```powershell
 $targetSkills = "$PROJECT_DIR\.claude\skills"
 New-Item -ItemType Directory -Force -Path $targetSkills
-Copy-Item "$($extracted.FullName)\skills\*" -Destination $targetSkills -Recurse -Force
+Copy-Item "$($extracted.FullName)\.claude\skills\*" -Destination $targetSkills -Recurse -Force
 Write-Host "Skills copied" -ForegroundColor Green
 ```
 
