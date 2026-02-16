@@ -55,7 +55,7 @@ Write-Host "bash path: $bashDir" -ForegroundColor Gray
 ```
 
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; which python3"
+bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:$bashDir/databricks:$bashDir/nodejs:`$PATH'; which python3 && which databricks && which node && echo 'All tools found'"
 ```
 
 ## 7. Once python3 is found, run the installer
@@ -73,7 +73,7 @@ python -c "import urllib.request; urllib.request.urlretrieve('https://raw.github
 Run it:
 
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:`$PATH'; bash install.sh"
+bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:$bashDir/databricks:$bashDir/nodejs:`$PATH'; bash install.sh"
 ```
 
 ## Cleanup
