@@ -200,6 +200,10 @@ $PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
 New-Item -ItemType Directory -Force -Path $PROJECT_DIR
 cd $PROJECT_DIR
 
+# The installer expects "python3" (Linux convention) — create a copy so bash can find it
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
+Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force
+
 # Download and run the installer (requires bash from Git installation)
 bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
 
@@ -391,6 +395,12 @@ List my SQL warehouses
 **Cause:** npm registry (registry.npmjs.org) is blocked.
 
 **Fix:** Use the manual download fallback in [Install Claude Code](#install-claude-code).
+
+## AI Dev Kit installer: "python3: command not found"
+
+**Cause:** The installer script uses `python3` (Linux/macOS convention), but Windows uses `python`.
+
+**Fix:** The install step in this guide already handles this by copying `python.exe` as `python3.exe` into the Git `bin` directory. If you skipped that step, run: `Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force`
 
 ## curl / bash installer fails
 
