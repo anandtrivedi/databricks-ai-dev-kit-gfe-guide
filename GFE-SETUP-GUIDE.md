@@ -124,12 +124,21 @@ Write-Host "PATH updated" -ForegroundColor Green
 
 ### Verify all prerequisites
 
-Verify the tools are available:
+Verify the tools are available (run each one):
 
 ```powershell
 node --version
+```
+
+```powershell
 npm --version
+```
+
+```powershell
 git --version
+```
+
+```powershell
 databricks --version
 ```
 
@@ -493,7 +502,7 @@ Even after the prerequisites are installed, the AI Dev Kit installation needs ne
 
 | Action | URL needed | Alternative if blocked |
 |--------|-----------|----------------------|
-| AI Dev Kit installer | raw.githubusercontent.com | Download zip from github.com |
+| AI Dev Kit download | github.com | Host zip on internal server |
 | Claude Code install | registry.npmjs.org | Download `.tgz` manually from npmjs.com |
 | AI Dev Kit Python deps | pypi.org | Typically works (pip uses allowed network path) |
 | Databricks workspace | Your workspace URL | Must be reachable |
@@ -540,7 +549,7 @@ C:\Users\<YourName>\
     ├── pip.exe                # pip (pre-existing)
     └── ...                    # Other pip-installed tools
   .databrickscfg               # CLI profile configuration
-  .ai-dev-kit\                 # MCP server files (manual install only)
+  .ai-dev-kit\                 # MCP server files
   my-databricks-project\
     ├── .env                   # Your endpoint config (DO NOT commit)
     ├── scripts\
