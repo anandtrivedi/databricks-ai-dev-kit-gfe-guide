@@ -203,6 +203,7 @@ cd $PROJECT_DIR
 # The installer expects "python3" (Linux convention) — create a copy so bash can find it
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\bin\python3.exe" -Force
+Write-Host "python3 ready: $TOOLS_DIR\git\bin\python3.exe" -ForegroundColor Green
 
 # Download and run the installer (requires bash from Git installation)
 bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
