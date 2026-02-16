@@ -1,99 +1,51 @@
-# Temp Commands - Manual AI Dev Kit Installation
+# Temp Commands - Fix bash and run AI Dev Kit installer
 
-The bash installer doesn't work with portable Git on Windows. Use these PowerShell commands instead.
-
-## 1. Create project directory
+## 1. Set tools dir
 
 ```powershell
-$PROJECT_DIR = "$env:USERPROFILE\my-databricks-project"
-New-Item -ItemType Directory -Force -Path $PROJECT_DIR
-cd $PROJECT_DIR
+$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
 ```
 
-## 2. Download AI Dev Kit
+## 2. Remove stale bash.exe from Scripts root
 
 ```powershell
-python -c "import urllib.request; print('Downloading...'); urllib.request.urlretrieve('https://github.com/databricks-solutions/ai-dev-kit/archive/refs/heads/main.zip', 'ai-dev-kit.zip'); print('Done.')"
+Remove-Item "$TOOLS_DIR\bash.exe" -Force
+Write-Host "Removed stale bash.exe" -ForegroundColor Green
 ```
 
-## 3. Extract and copy files
+## 3. Verify bash now resolves to git\bin
 
 ```powershell
-Expand-Archive ai-dev-kit.zip -DestinationPath "$env:TEMP\ai-dev-kit-extract" -Force
+(Get-Command bash).Source
 ```
 
-```powershell
-$extracted = Get-ChildItem "$env:TEMP\ai-dev-kit-extract" -Directory | Select-Object -First 1
-```
+Should show `...\Scripts\git\bin\bash.exe`, NOT `...\Scripts\bash.exe`.
 
-Copy skills to project:
+## 4. Make sure python3 and uv are available
 
 ```powershell
-$targetSkills = "$PROJECT_DIR\.claude\skills"
-New-Item -ItemType Directory -Force -Path $targetSkills
-Copy-Item "$($extracted.FullName)\.claude\skills\*" -Destination $targetSkills -Recurse -Force
-Write-Host "Skills copied" -ForegroundColor Green
-```
-
-Copy MCP server files:
-
-```powershell
-$aiDevKitDir = "$env:USERPROFILE\.ai-dev-kit"
-New-Item -ItemType Directory -Force -Path $aiDevKitDir
-Copy-Item "$($extracted.FullName)\*" -Destination $aiDevKitDir -Recurse -Force
-Write-Host "MCP server files copied" -ForegroundColor Green
-```
-
-Cleanup:
-
-```powershell
-Remove-Item "$env:TEMP\ai-dev-kit-extract" -Recurse -Force
-Remove-Item "ai-dev-kit.zip"
-```
-
-## 4. Install Python dependencies
-
-```powershell
-pip install databricks-sdk python-dotenv anthropic openai pydantic
+Copy-Item (Get-Command python).Source "$TOOLS_DIR\git\usr\bin\python3.exe" -Force
+Write-Host "python3 ready" -ForegroundColor Green
 ```
 
 ```powershell
-pip install "$env:USERPROFILE\.ai-dev-kit\databricks-tools-core"
+pip install uv
 ```
 
-```powershell
-pip install "$env:USERPROFILE\.ai-dev-kit\databricks-mcp-server"
-```
-
-## 5. Create MCP config
+## 5. Run the official installer
 
 ```powershell
 cd "$env:USERPROFILE\my-databricks-project"
 ```
 
 ```powershell
-python -c "import json; json.dump({'mcpServers': {'databricks': {'command': 'python', 'args': ['-m', 'databricks_mcp_server'], 'env': {'DATABRICKS_CONFIG_PROFILE': 'my-workspace'}}}}, open('.mcp.json', 'w'), indent=2)"
+bash -c "curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh -o install.sh && bash install.sh"
 ```
 
-```powershell
-Write-Host "MCP config created" -ForegroundColor Green
-```
-
-## 6. Verify
-
-```powershell
-python -c "import databricks_mcp_server; print('MCP server OK')"
-```
-
-```powershell
-Test-Path "$env:USERPROFILE\my-databricks-project\.claude\skills"
-```
-
-```powershell
-Test-Path "$env:USERPROFILE\my-databricks-project\.mcp.json"
-```
-
-All three should print True/OK. Done — continue with "Configure and Launch" in the main guide.
+When prompted:
+1. Select tools → Claude Code
+2. Select profile → my-workspace
+3. Select scope → Project
 
 ## Cleanup
 
