@@ -11,6 +11,7 @@ Remove-Item "$TOOLS_DIR\nodejs" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "$TOOLS_DIR\git" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "$TOOLS_DIR\databricks" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "$TOOLS_DIR\bash.exe" -Force -ErrorAction SilentlyContinue
+Remove-Item "$TOOLS_DIR\node.exe" -Force -ErrorAction SilentlyContinue
 Remove-Item "$TOOLS_DIR\python3.exe" -Force -ErrorAction SilentlyContinue
 Write-Host "Tools removed" -ForegroundColor Green
 ```
