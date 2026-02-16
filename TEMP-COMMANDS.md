@@ -70,10 +70,16 @@ Download install.sh with Python (curl isn't available in portable Git):
 python -c "import urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/install.sh', 'install.sh'); print('Done.')"
 ```
 
-Run it:
+Install uv (Python package manager the installer now requires):
 
 ```powershell
-bash -c "export PATH='$bashDir/git/bin:$bashDir/git/usr/bin:$bashDir/databricks:$bashDir/nodejs:`$PATH'; bash install.sh"
+pip install uv
+```
+
+Run the installer (now includes Scripts dir for uv):
+
+```powershell
+bash -c "export PATH='$bashDir:$bashDir/git/bin:$bashDir/git/usr/bin:$bashDir/databricks:$bashDir/nodejs:`$PATH'; bash install.sh"
 ```
 
 ## Cleanup
