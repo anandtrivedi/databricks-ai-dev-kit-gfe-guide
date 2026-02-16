@@ -1,4 +1,6 @@
-# Full Clean Install Test
+# Single-Paste Install
+
+Same steps as the [GFE Setup Guide](GFE-SETUP-GUIDE.md), condensed into two copy-paste blocks for convenience.
 
 ## Part 1: Clean slate (paste all at once, press Enter)
 
@@ -93,6 +95,3 @@ Write-Host "===== INSTALLATION COMPLETE =====" -ForegroundColor Green
 Write-Host "Next: configure .env with your Databricks endpoint details" -ForegroundColor Yellow
 ```
 
-## Cleanup
-
-Delete this file from the repo when done.

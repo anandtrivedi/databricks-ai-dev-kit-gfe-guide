@@ -1,8 +1,8 @@
-# Admin Prerequisites Installation
+# Quick Install
 
-**For Databricks administrators setting up shared machines or users on non-GFE corporate laptops.**
+**For machines with full privileges and unrestricted internet access.**
 
-This is a supplementary reference for environments where you have local admin privileges and unrestricted internet access. Most GFE users should follow the main [GFE Setup Guide](GFE-SETUP-GUIDE.md) instead.
+Use this if you have local admin and can download freely (e.g., non-GFE corporate laptops, Databricks admin machines). Most GFE users should follow the main [GFE Setup Guide](GFE-SETUP-GUIDE.md) instead.
 
 ## Install prerequisites
 

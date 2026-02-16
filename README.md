@@ -13,7 +13,8 @@ The [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) 
 | File | Purpose |
 |------|---------|
 | [GFE-SETUP-GUIDE.md](GFE-SETUP-GUIDE.md) | Complete installation walkthrough for GFE machines |
-| [ADMIN-INSTALL.md](ADMIN-INSTALL.md) | Quick reference for admins with full privileges |
+| [QUICK-INSTALL.md](QUICK-INSTALL.md) | For machines with full privileges and internet |
+| [SINGLE-PASTE-INSTALL.md](SINGLE-PASTE-INSTALL.md) | Two copy-paste blocks for the entire GFE install |
 | [setup-env.ps1](scripts/setup-env.ps1) | Interactive wizard to generate your `.env` configuration |
 | [setup-proxy.ps1](scripts/setup-proxy.ps1) | Auto-detect and configure corporate proxy for all tools |
 | [start.ps1](scripts/start.ps1) | PowerShell launch script for Claude Code |
