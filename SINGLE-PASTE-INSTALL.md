@@ -1,34 +1,8 @@
 # Single-Paste Install
 
-Same steps as the [GFE Setup Guide](GFE-SETUP-GUIDE.md), condensed into two copy-paste blocks for convenience.
+Same steps as the [GFE Setup Guide](GFE-SETUP-GUIDE.md), condensed into one copy-paste block. Paste it all into PowerShell, press **Enter**, and wait ~10 minutes. Git extraction takes several minutes — everything else runs after it automatically.
 
-## Part 1: Clean slate (paste all at once, press Enter)
-
-```powershell
-$ErrorActionPreference = "SilentlyContinue"
-$TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
-Remove-Item "$TOOLS_DIR\nodejs" -Recurse -Force
-Remove-Item "$TOOLS_DIR\git" -Recurse -Force
-Remove-Item "$TOOLS_DIR\databricks" -Recurse -Force
-Remove-Item "$TOOLS_DIR\bash.exe" -Force
-Remove-Item "$TOOLS_DIR\node.exe" -Force
-Remove-Item "$TOOLS_DIR\python3.exe" -Force
-Remove-Item "$env:USERPROFILE\my-databricks-project" -Recurse -Force
-Remove-Item "$env:USERPROFILE\.ai-dev-kit" -Recurse -Force
-Remove-Item "$env:USERPROFILE\.databrickscfg" -Force
-npm uninstall -g @anthropic-ai/claude-code 2>$null
-pip uninstall -y databricks-sdk python-dotenv anthropic openai pydantic uv databricks-tools-core databricks-mcp-server 2>$null
-$ErrorActionPreference = "Continue"
-Write-Host "Clean slate done. Close and reopen PowerShell, then run Part 2." -ForegroundColor Green
-```
-
-Close and reopen PowerShell before Part 2.
-
----
-
-## Part 2: Full install (paste all at once, press Enter, then wait ~10 min)
-
-Git extraction alone takes several minutes. Everything else runs after it automatically.
+> **Prerequisite:** Python 3.11+ must already be installed. Run `python --version` to verify.
 
 ```powershell
 $TOOLS_DIR = python -c "import site; print(site.getusersitepackages().replace('site-packages', 'Scripts'))"
@@ -95,3 +69,4 @@ Write-Host "===== INSTALLATION COMPLETE =====" -ForegroundColor Green
 Write-Host "Next: configure .env with your Databricks endpoint details" -ForegroundColor Yellow
 ```
 
+Once complete, follow [Configure and Launch](GFE-SETUP-GUIDE.md#configure-and-launch) in the main guide to set up your `.env` file and launch script.
