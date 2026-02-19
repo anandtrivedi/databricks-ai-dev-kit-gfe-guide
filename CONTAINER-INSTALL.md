@@ -2,6 +2,8 @@
 
 Run the full AI Dev Kit environment in a container — nothing to install on the GFE machine except Docker.
 
+> **Status:** The container image builds and has been tested on macOS. The Linux container runs identically on Windows Docker Desktop (via WSL2). The Windows commands below have not yet been validated on GFE.
+
 ## Prerequisites
 
 IT must provision one of the following on the GFE machine:
@@ -64,6 +66,17 @@ Replace `your-workspace.cloud.databricks.com` with your workspace URL, `anthropi
 
 ## Run
 
+### From PowerShell
+
+```powershell
+docker run -it --rm `
+  --env-file "$env:USERPROFILE\.claude-env" `
+  -v "$env:USERPROFILE\.databrickscfg:/home/dev/.databrickscfg:ro" `
+  ai-dev-kit
+```
+
+### From Command Prompt (cmd.exe)
+
 ```
 docker run -it --rm ^
   --env-file %USERPROFILE%\.claude-env ^
@@ -72,7 +85,7 @@ docker run -it --rm ^
 ```
 
 This starts Claude Code in an interactive terminal with:
-- All 26+ AI Dev Kit skills loaded
+- All AI Dev Kit skills loaded
 - Databricks MCP server configured
 - Python, Node.js, Git, and Databricks CLI available
 
@@ -80,11 +93,11 @@ This starts Claude Code in an interactive terminal with:
 
 Run a single prompt without entering the interactive session:
 
-```
-docker run --rm ^
-  --env-file %USERPROFILE%\.claude-env ^
-  -v %USERPROFILE%\.databrickscfg:/home/dev/.databrickscfg:ro ^
-  ai-dev-kit ^
+```powershell
+docker run --rm `
+  --env-file "$env:USERPROFILE\.claude-env" `
+  -v "$env:USERPROFILE\.databrickscfg:/home/dev/.databrickscfg:ro" `
+  ai-dev-kit `
   claude -p "list my Databricks clusters"
 ```
 
@@ -122,10 +135,20 @@ This is a known Claude Code bug where a billing header is injected into the syst
 
 If running behind a proxy, pass proxy settings to the container:
 
-```
-docker run -it --rm ^
-  --env-file %USERPROFILE%\.claude-env ^
-  -e HTTPS_PROXY=http://proxy.example.com:8080 ^
-  -v %USERPROFILE%\.databrickscfg:/home/dev/.databrickscfg:ro ^
+```powershell
+docker run -it --rm `
+  --env-file "$env:USERPROFILE\.claude-env" `
+  -e HTTPS_PROXY=http://proxy.example.com:8080 `
+  -v "$env:USERPROFILE\.databrickscfg:/home/dev/.databrickscfg:ro" `
   ai-dev-kit
 ```
+
+### Encoding issues with env file
+
+If Claude Code fails to read the environment file, verify it's ASCII/UTF-8 (not UTF-16):
+
+```powershell
+Get-Content "$env:USERPROFILE\.claude-env" -Encoding Byte | Select-Object -First 4
+```
+
+If the first two bytes are `255 254` (BOM), recreate the file with `-Encoding ASCII`.
