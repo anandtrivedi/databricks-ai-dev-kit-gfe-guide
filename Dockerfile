@@ -1,24 +1,29 @@
-FROM python:3.11-slim
+# Default: public Docker Hub image (for testing/non-GFE)
+# Iron Bank: docker build --build-arg BASE_IMAGE=registry1.dso.mil/ironbank/opensource/python/python311:latest .
+ARG BASE_IMAGE=python:3.11-slim
+FROM ${BASE_IMAGE}
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    unzip \
-    xz-utils \
-    git \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (detect package manager for Debian vs UBI)
+RUN if command -v apt-get > /dev/null; then \
+      apt-get update && apt-get install -y --no-install-recommends \
+        curl unzip xz-utils git ca-certificates \
+      && rm -rf /var/lib/apt/lists/*; \
+    elif command -v dnf > /dev/null; then \
+      dnf install -y curl unzip xz git && dnf clean all; \
+    elif command -v yum > /dev/null; then \
+      yum install -y curl unzip xz git && yum clean all; \
+    fi
 
 # Install Node.js LTS (detect architecture)
 ARG NODE_VERSION=20.18.1
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "arm64" ]; then NODE_ARCH="linux-arm64"; else NODE_ARCH="linux-x64"; fi && \
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then NODE_ARCH="linux-arm64"; else NODE_ARCH="linux-x64"; fi && \
     curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz" \
     | tar -xJ -C /usr/local --strip-components=1
 
 # Install Databricks CLI (latest, detect architecture)
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "arm64" ]; then CLI_ARCH="linux_arm64"; else CLI_ARCH="linux_amd64"; fi && \
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then CLI_ARCH="linux_arm64"; else CLI_ARCH="linux_amd64"; fi && \
     TAG=$(curl -s https://api.github.com/repos/databricks/cli/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])") && \
     VERSION=${TAG#v} && \
     curl -fsSL "https://github.com/databricks/cli/releases/download/${TAG}/databricks_cli_${VERSION}_${CLI_ARCH}.zip" -o /tmp/databricks.zip && \
@@ -45,9 +50,6 @@ RUN mkdir -p /home/dev/my-databricks-project/.claude/skills && \
 
 WORKDIR /home/dev/my-databricks-project
 
-# Credentials are mounted at runtime, not baked in:
-#   -v %USERPROFILE%\.databrickscfg:/home/dev/.databrickscfg
-#   -v %USERPROFILE%\.env:/home/dev/my-databricks-project/.env
 ENV HOME=/home/dev
 # Workaround: Claude Code 2.1.x injects x-anthropic-billing-header into system
 # prompt, which Databricks endpoints reject. Disable until upstream fix lands.

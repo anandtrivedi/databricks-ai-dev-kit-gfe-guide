@@ -23,6 +23,16 @@ On a machine with internet access (done once by an admin or on a build machine):
 docker build -t ai-dev-kit .
 ```
 
+### Iron Bank base image
+
+For environments that require DoD-hardened containers, build with the Iron Bank Python 3.11 image:
+
+```
+docker build --build-arg BASE_IMAGE=registry1.dso.mil/ironbank/opensource/python/python311:latest -t ai-dev-kit .
+```
+
+You must be authenticated to `registry1.dso.mil` to pull the base image. The Dockerfile auto-detects the package manager (apt for Debian, dnf/yum for UBI) so the same Dockerfile works with either base.
+
 ### Air-gapped transfer
 
 To move the image to a GFE machine without internet:
