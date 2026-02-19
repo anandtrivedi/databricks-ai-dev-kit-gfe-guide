@@ -49,5 +49,8 @@ WORKDIR /home/dev/my-databricks-project
 #   -v %USERPROFILE%\.databrickscfg:/home/dev/.databrickscfg
 #   -v %USERPROFILE%\.env:/home/dev/my-databricks-project/.env
 ENV HOME=/home/dev
+# Workaround: Claude Code 2.1.x injects x-anthropic-billing-header into system
+# prompt, which Databricks endpoints reject. Disable until upstream fix lands.
+ENV CLAUDE_CODE_ATTRIBUTION_HEADER=0
 
 CMD ["claude"]
