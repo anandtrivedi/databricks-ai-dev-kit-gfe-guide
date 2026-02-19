@@ -111,6 +111,53 @@ docker run --rm `
   claude -p "list my Databricks clusters"
 ```
 
+## Try it out
+
+Once Claude Code starts, you'll see a prompt where you type in plain English. Here are some things to try, from simple to advanced:
+
+**Verify connectivity:**
+```
+list my Databricks clusters
+```
+If this returns results, everything is working — Claude Code, your credentials, and the MCP server.
+
+**Run SQL:**
+```
+run this SQL: SELECT current_date(), current_user()
+```
+
+**Explore your data:**
+```
+show me the tables in my Unity Catalog
+```
+
+**Build a notebook:**
+```
+create a Python notebook that reads a Delta table and shows the first 10 rows
+```
+
+**Create a job:**
+```
+create a Databricks job that runs a notebook daily at 8am
+```
+
+**Build a dashboard:**
+```
+build an AI/BI dashboard showing row counts for all tables in the main catalog
+```
+
+**Create a pipeline:**
+```
+create a DLT pipeline that ingests CSV files from a volume and writes to a Delta table
+```
+
+**Check serving endpoints:**
+```
+what serving endpoints do I have in my workspace?
+```
+
+You don't need to memorize commands or syntax — just describe what you want in plain English and Claude will use the AI Dev Kit skills and Databricks MCP tools to do it.
+
 ## What's in the container
 
 | Tool | Details |
